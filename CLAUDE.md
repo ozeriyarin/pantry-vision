@@ -66,7 +66,8 @@ shipped commit sha.
   (0.0001 USD). Labels are weak at both steps (labneh read as tahini, yogurt as ice cream): tune prompts
   before the baseline eval.
 - 2026-10-20: US2 T031-T036 done (124 tests).
-- Next: US3 morning message (T037-T040) or deploy (T041-T044).
+- 2026-10-20: US3 T037-T040 done (142 tests). All three stories pass offline.
+- Next: deploy (T041-T044), then eval and polish (T045-T051).
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 
