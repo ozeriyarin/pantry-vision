@@ -74,3 +74,23 @@ def test_root_can_be_overridden_for_containers(monkeypatch, tmp_path):
     assert importlib.reload(config).ROOT == tmp_path
     monkeypatch.delenv("PANTRY_ROOT")
     importlib.reload(config)
+
+
+@pytest.mark.parametrize(
+    "name, key",
+    [
+        ("בירהה", "beer"),
+        ("עגבנייות", "tomato"),
+        ("ביצימ", "eggs"),
+        ("חלב נטול לקטוז", None),
+        ("קולרבי", None),
+    ],
+)
+def test_suggest_close_names_only(catalog, name, key):
+    found = catalog.suggest(name)
+    assert (found.key if found else None) == key
+
+
+@pytest.mark.parametrize("plural, key", [("בירות", "beer"), ("ריבות", "jam"), ("גלידות", "ice_cream")])
+def test_common_plurals_resolve(catalog, plural, key):
+    assert catalog.resolve(plural).key == key

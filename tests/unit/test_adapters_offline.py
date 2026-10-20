@@ -64,6 +64,6 @@ def test_photo_path_is_dated_under_photos_prefix():
 def test_pending_question_with_more_names_round_trips():
     from pantry.domain.models import PendingQuestion
 
-    q = PendingQuestion(1, "new_item", "א", "s1", 1, NOW, (("ב", 2), ("ג", 3)))
+    q = PendingQuestion(1, "new_item", "s1", NOW, (("א", 1, "set", ""), ("בירהה", 2, "add", "beer")))
     back = PendingQuestion(**plain(q))
-    assert [(back.name, back.count), *[tuple(p) for p in back.more]] == [("א", 1), ("ב", 2), ("ג", 3)]
+    assert [tuple(e) for e in back.entries] == [("א", 1, "set", ""), ("בירהה", 2, "add", "beer")]

@@ -125,7 +125,7 @@ def test_clashing_new_name_is_refused_and_bot_keeps_working(h):
 
     h.photo([box("eggs")])
     # A pending name that slipped past resolve but clashes after normalisation
-    h.store.set_pending(PendingQuestion(111, "new_item", "milk", None, 1, h.clock.now()))
+    h.store.set_pending(PendingQuestion(111, "new_item", None, h.clock.now(), (("milk", 1, "set", ""),)))
     h.tap("newitem:yes")
     assert h.last_text() == "בסדר, לא הוספתי."
     assert sum(1 for i in h.store.list_item_types() if i.added_by == "owner") == 0
@@ -194,3 +194,39 @@ def test_multi_line_all_known_needs_no_question(h):
     h.text("ביצים 2\nאין חלב")
     assert h.telegram.sent[-1].buttons is None
     assert h.counts()["eggs"] == 2
+
+
+def test_plural_names_update_existing_items(h):
+    """Owner feedback: "בירות 4" must update beer, not create a new item."""
+    h.photo([box("eggs")])
+    reply = h.text("ביצים 6\nאין חלב\nבירות 4\nאבקת מרק עוף 1")
+    assert "ביצים ×6" in reply and "חלב ×0" in reply and "בירה ×4" in reply
+    assert h.counts()["beer"] == 4
+    assert '"אבקת מרק עוף"' in reply and h.button_data() == ["newitem:yes", "newitem:no"]
+
+
+def test_close_name_asks_did_you_mean_and_yes_uses_existing(h):
+    h.photo([box("eggs")])
+    reply = h.text("בירהה 3")
+    assert reply == 'לא מכיר "בירהה". התכוונת לבירה?'
+    assert h.button_data() == ["newitem:yes", "newitem:new", "newitem:no"]
+    h.tap("newitem:yes")
+    assert h.counts()["beer"] == 3
+    assert not [i for i in h.store.list_item_types() if i.added_by == "owner"]
+
+
+def test_close_name_new_creates_a_separate_item(h):
+    h.photo([box("eggs")])
+    h.text("בירהה 3")
+    h.tap("newitem:new")
+    owner = [i for i in h.store.list_item_types() if i.added_by == "owner"]
+    assert [i.name_he for i in owner] == ["בירהה"] and h.counts()[owner[0].key] == 3
+
+
+def test_mixed_list_with_suggestion_and_new_name(h):
+    h.photo([box("eggs")])
+    reply = h.text("עגבנייות 2\nקולרבי 1")
+    assert '"עגבנייות" - התכוונת לעגבנייה?' in reply and '"קולרבי" - פריט חדש' in reply
+    h.tap("newitem:yes")
+    assert h.counts()["tomato"] == 2
+    assert [i.name_he for i in h.store.list_item_types() if i.added_by == "owner"] == ["קולרבי"]

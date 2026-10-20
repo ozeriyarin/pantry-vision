@@ -3,6 +3,7 @@
 import re
 import unicodedata
 from collections.abc import Iterable
+from difflib import SequenceMatcher
 from pathlib import Path
 
 import yaml
@@ -77,6 +78,20 @@ class ItemCatalog:
 
     def keys(self) -> list[str]:
         return list(self._by_key)
+
+    def suggest(self, name: str, cutoff: float = 0.8) -> ItemType | None:
+        """The known item whose name is closest to an unknown one (typos, plural forms), if close enough."""
+        norm = normalise(name)
+        if not norm:
+            return None
+        if norm in self._by_name:
+            return self._by_name[norm]
+        best, score = None, 0.0
+        for known, item in self._by_name.items():
+            ratio = SequenceMatcher(None, norm, known).ratio()
+            if ratio > score:
+                best, score = item, ratio
+        return best if score >= cutoff else None
 
     def resolve(self, name: str) -> ItemType | None:
         norm = normalise(name)

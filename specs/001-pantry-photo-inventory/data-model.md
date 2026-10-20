@@ -95,5 +95,7 @@ were not checked.
 
 ## PendingQuestion — `pantry_pending/{chat_id}`
 
-`{kind: "new_item", name, snapshot_id, count, created_at}`. Answered by the yes/no buttons for an
-unknown item name (Story 2, scenario 3); expires after 10 minutes.
+`{kind: "new_item", snapshot_id, created_at, entries: [[name, count, "set" | "add", suggested_key | ""]]}`.
+One question covers every unknown name in a message (Story 2, scenario 3). A name close to a known item
+(typo, plural) carries a suggestion: "yes" applies the suggestion and creates the rest, "new" creates all,
+"no" cancels. Expires after 10 minutes.

@@ -56,11 +56,19 @@ def not_understood_line(line: str) -> str:
     return f'לא הבנתי: "{line}"'
 
 
-def unknown_items(names: list[str]) -> str:
+def unknown_items(names: list[str], suggestions: dict[str, str] | None = None) -> str:
+    suggestions = suggestions or {}
+    if not suggestions:
+        if len(names) == 1:
+            return unknown_item(names[0])
+        quoted = ", ".join(f'"{n}"' for n in names)
+        return f"לא מכיר: {quoted}. להוסיף כסוגי מוצרים חדשים?"
     if len(names) == 1:
-        return unknown_item(names[0])
-    quoted = ", ".join(f'"{n}"' for n in names)
-    return f"לא מכיר: {quoted}. להוסיף כסוגי מוצרים חדשים?"
+        return f'לא מכיר "{names[0]}". התכוונת ל{suggestions[names[0]]}?'
+    lines = [
+        f'"{n}" - התכוונת ל{suggestions[n]}?' if n in suggestions else f'"{n}" - פריט חדש' for n in names
+    ]
+    return "\n".join(["לא מכיר:", *lines, "לאשר?"])
 
 
 def no_open_session() -> str:
@@ -111,4 +119,5 @@ def error() -> str:
 
 
 YES, NO = "כן", "לא"
+NEW, CANCEL = "פריט חדש", "ביטול"
 CONFIRM, REMOVE = "✓", "✗"

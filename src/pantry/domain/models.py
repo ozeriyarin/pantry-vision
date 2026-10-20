@@ -128,11 +128,10 @@ class Baseline:
 class PendingQuestion:
     chat_id: int
     kind: Literal["new_item"]
-    name: str
     snapshot_id: str | None
-    count: int
     created_at: datetime
-    more: tuple = ()  # further (name, count) pairs from a multi-line message
+    # (name, count, "set" or "add", suggested existing key or "") per unknown name
+    entries: tuple = ()
 
 
 def inventory_id(location: Location, key: str) -> str:

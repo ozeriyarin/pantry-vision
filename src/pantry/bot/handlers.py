@@ -202,18 +202,30 @@ class Bot:
         if item is None:
             if isinstance(intent, Remove):
                 return texts.no_item(intent.name), None
-            question = PendingQuestion(
-                update.chat_id,
-                "new_item",
-                intent.name,
-                snap.id if snap else None,
-                intent.count,
-                self._clock.now(),
+            mode = "add" if isinstance(intent, Add) else "set"
+            return self._ask_unknown(
+                update.chat_id, snap, catalog, [(intent.name.strip(), intent.count, mode)]
             )
-            self._store.set_pending(question)
-            return texts.unknown_item(intent.name), [[(texts.YES, "newitem:yes"), (texts.NO, "newitem:no")]]
         entry = self._apply(snap, item.key, intent, text)
         return texts.updated(item.name_he, entry.count), None
+
+    def _ask_unknown(self, chat_id: int, snap, catalog: ItemCatalog, unknown: list[tuple[str, int, str]]):
+        """One question for all unknown names; close names get a 'did you mean' instead of a new item."""
+        entries = []
+        for name, count, mode in unknown:
+            near = catalog.suggest(name)
+            entries.append((name, count, mode, near.key if near else ""))
+        question = PendingQuestion(
+            chat_id, "new_item", snap.id if snap else None, self._clock.now(), tuple(entries)
+        )
+        self._store.set_pending(question)
+        suggestions = {name: catalog.get(key).name_he for name, _, _, key in entries if key}
+        text = texts.unknown_items([e[0] for e in entries], suggestions)
+        if suggestions:
+            buttons = [[(texts.YES, "newitem:yes"), (texts.NEW, "newitem:new"), (texts.CANCEL, "newitem:no")]]
+        else:
+            buttons = [[(texts.YES, "newitem:yes"), (texts.NO, "newitem:no")]]
+        return text, buttons
 
     def _apply(self, snap, key: str, intent: SetCount | Remove | Add, text: str):
         if isinstance(intent, Add):
@@ -234,22 +246,17 @@ class Bot:
             if item is None:
                 if isinstance(intent, Remove):
                     done.append(texts.no_item(intent.name))
-                elif intent.name.strip() not in [n for n, _ in unknown]:
-                    unknown.append((intent.name.strip(), intent.count))
+                elif intent.name.strip() not in [u[0] for u in unknown]:
+                    mode = "add" if isinstance(intent, Add) else "set"
+                    unknown.append((intent.name.strip(), intent.count, mode))
                 continue
             entry = self._apply(snap, item.key, intent, seg)
             done.append(texts.item_line(item.name_he, entry.count))
         lines = texts.updated_many(done) + [texts.not_understood_line(b) for b in bad]
         buttons = None
         if unknown:
-            (name, count), more = unknown[0], tuple(unknown[1:])
-            snap_id = snap.id if snap else None
-            question = PendingQuestion(
-                update.chat_id, "new_item", name, snap_id, count, self._clock.now(), more
-            )
-            self._store.set_pending(question)
-            lines.append(texts.unknown_items([n for n, _ in unknown]))
-            buttons = [[(texts.YES, "newitem:yes"), (texts.NO, "newitem:no")]]
+            question, buttons = self._ask_unknown(update.chat_id, snap, catalog, unknown)
+            lines.append(question)
         return "\n".join(lines) or texts.not_understood(), buttons
 
     # Buttons
@@ -261,7 +268,7 @@ class Bot:
             self._cosmetic(self._telegram.answer_callback, cb.id)
             if cb.message_id:
                 self._cosmetic(self._telegram.set_buttons, update.chat_id, cb.message_id, None)
-            self._new_item(update.chat_id, rest == "yes")
+            self._new_item(update.chat_id, rest)
             return
         snapshot_id, _, key = rest.partition(":")
         snap = self._store.get_snapshot(snapshot_id) if action in ("confirm", "remove") else None
@@ -290,20 +297,27 @@ class Bot:
                 "cosmetic telegram call failed: %s", exc if "telegram" in str(exc) else type(exc).__name__
             )
 
-    def _new_item(self, chat_id: int, accepted: bool) -> None:
+    def _new_item(self, chat_id: int, choice: str) -> None:
+        """choice: yes = accept suggestions and create the rest, new = create all, no = cancel."""
         pending = self._store.get_pending(chat_id)
         self._store.clear_pending(chat_id)
         now = self._clock.now()
         if pending is None or (now - pending.created_at).total_seconds() > self._pending_ttl_s:
             self._telegram.send_message(chat_id, texts.question_expired())
             return
-        if not accepted:
+        if choice not in ("yes", "new"):
             self._telegram.send_message(chat_id, texts.not_added())
             return
         snap = self._store.get_snapshot(pending.snapshot_id) if pending.snapshot_id else None
         catalog = self._catalog()
         added = []
-        for name, count in [(pending.name, pending.count), *pending.more]:
+        for name, count, mode, suggested in pending.entries:
+            existing = catalog.get(suggested) if suggested and choice == "yes" else None
+            if existing:
+                intent = Add(name, count) if mode == "add" else SetCount(name, count)
+                entry = self._apply(snap, existing.key, intent, f"{name} -> {existing.key}")
+                added.append((existing.name_he, entry.count))
+                continue
             item = ItemType(key=f"owner_{uuid4().hex[:8]}", name_he=name.strip(), added_by="owner")
             try:
                 catalog.add(item)
