@@ -89,6 +89,11 @@ def _name_and_count(text: str) -> tuple[str, int | None]:
 Intent = Query | Has | SetCount | Remove | Add | Done | Unknown
 
 
+def split_lines(text: str) -> list[str]:
+    """A message can carry several corrections, one per line or separated by commas."""
+    return [part.strip() for line in text.splitlines() for part in line.split(",") if part.strip()]
+
+
 def parse_text(text: str) -> Intent:
     norm = normalise(text or "")
     if not norm:

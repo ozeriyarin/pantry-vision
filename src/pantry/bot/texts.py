@@ -48,6 +48,21 @@ def session_closed(location: Location, zeroed: Iterable[str]) -> str:
     return "\n".join([f"נגמרו {in_location(location)}:", *zeroed])
 
 
+def updated_many(lines: list[str]) -> list[str]:
+    return ["עודכן:", *lines] if lines else []
+
+
+def not_understood_line(line: str) -> str:
+    return f'לא הבנתי: "{line}"'
+
+
+def unknown_items(names: list[str]) -> str:
+    if len(names) == 1:
+        return unknown_item(names[0])
+    quoted = ", ".join(f'"{n}"' for n in names)
+    return f"לא מכיר: {quoted}. להוסיף כסוגי מוצרים חדשים?"
+
+
 def no_open_session() -> str:
     return "אין צילום פתוח לסגור."
 

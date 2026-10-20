@@ -29,6 +29,9 @@ Uncertain line buttons: `✓` (callback `confirm:<snapshot>:<key>`) and `✗` (c
 | callback `remove:…` | false | set count to 0 |
 | `סיימתי`, `done` | close | close the open session as full; unseen items of that location go to 0; reply lists them, or "שום דבר לא נגמר" |
 
+A message may hold several corrections, one per line or separated by commas; each is applied, unreadable
+lines are listed as `לא הבנתי: "<line>"`, and all unknown names share one yes/no question.
+
 Reply: `עודכן: ביצים ×4`. Unknown `<item>`: `לא מכיר "<item>". להוסיף כסוג מוצר חדש?` with buttons
 `כן` / `לא`; `כן` creates the item type and applies the correction.
 

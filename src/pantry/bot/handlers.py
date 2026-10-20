@@ -5,7 +5,17 @@ import time
 from uuid import uuid4
 
 from pantry.bot import texts
-from pantry.bot.commands import Add, Done, Has, Query, Remove, SetCount, parse_location, parse_text
+from pantry.bot.commands import (
+    Add,
+    Done,
+    Has,
+    Query,
+    Remove,
+    SetCount,
+    parse_location,
+    parse_text,
+    split_lines,
+)
 from pantry.bot.updates import Update
 from pantry.config import Settings
 from pantry.detection.fallback import Fallback
@@ -139,8 +149,13 @@ class Bot:
     # Text
 
     def _text(self, update: Update) -> None:
-        intent = parse_text(update.text or "")
         catalog = self._catalog()
+        segments = split_lines(update.text or "")
+        if len(segments) > 1:
+            reply, buttons = self._correct_many(update, catalog, segments)
+            self._telegram.send_message(update.chat_id, reply, buttons=buttons)
+            return
+        intent = parse_text(update.text or "")
         if isinstance(intent, Query):
             reply = self._inventory(catalog, intent.location)
         elif isinstance(intent, Has):
@@ -197,12 +212,45 @@ class Bot:
             )
             self._store.set_pending(question)
             return texts.unknown_item(intent.name), [[(texts.YES, "newitem:yes"), (texts.NO, "newitem:no")]]
-        if isinstance(intent, Add):
-            _, entry = self._corrections.add(snap, item.key, intent.count, text)
-        else:
-            count = 0 if isinstance(intent, Remove) else intent.count
-            _, entry = self._corrections.set_count(snap, item.key, count, text)
+        entry = self._apply(snap, item.key, intent, text)
         return texts.updated(item.name_he, entry.count), None
+
+    def _apply(self, snap, key: str, intent: SetCount | Remove | Add, text: str):
+        if isinstance(intent, Add):
+            return self._corrections.add(snap, key, intent.count, text)[1]
+        count = 0 if isinstance(intent, Remove) else intent.count
+        return self._corrections.set_count(snap, key, count, text)[1]
+
+    def _correct_many(self, update: Update, catalog: ItemCatalog, segments: list[str]):
+        """One correction per line or comma; unknown names get a single yes/no question."""
+        snap = self._corrections.target(update.reply_to_message_id)
+        done, unknown, bad = [], [], []
+        for seg in segments:
+            intent = parse_text(seg)
+            if not isinstance(intent, SetCount | Remove | Add) or not valid_new_name(intent.name):
+                bad.append(seg)
+                continue
+            item = catalog.resolve(intent.name)
+            if item is None:
+                if isinstance(intent, Remove):
+                    done.append(texts.no_item(intent.name))
+                elif intent.name.strip() not in [n for n, _ in unknown]:
+                    unknown.append((intent.name.strip(), intent.count))
+                continue
+            entry = self._apply(snap, item.key, intent, seg)
+            done.append(texts.item_line(item.name_he, entry.count))
+        lines = texts.updated_many(done) + [texts.not_understood_line(b) for b in bad]
+        buttons = None
+        if unknown:
+            (name, count), more = unknown[0], tuple(unknown[1:])
+            snap_id = snap.id if snap else None
+            question = PendingQuestion(
+                update.chat_id, "new_item", name, snap_id, count, self._clock.now(), more
+            )
+            self._store.set_pending(question)
+            lines.append(texts.unknown_items([n for n, _ in unknown]))
+            buttons = [[(texts.YES, "newitem:yes"), (texts.NO, "newitem:no")]]
+        return "\n".join(lines) or texts.not_understood(), buttons
 
     # Buttons
 
@@ -252,17 +300,25 @@ class Bot:
         if not accepted:
             self._telegram.send_message(chat_id, texts.not_added())
             return
-        item = ItemType(key=f"owner_{uuid4().hex[:8]}", name_he=pending.name.strip(), added_by="owner")
-        try:
-            candidate = self._catalog()
-            candidate.add(item)
-        except ValueError:
-            self._telegram.send_message(chat_id, texts.not_added())
-            return
-        self._store.upsert_item_type(item)
         snap = self._store.get_snapshot(pending.snapshot_id) if pending.snapshot_id else None
-        _, entry = self._corrections.add(snap, item.key, pending.count, f"+ {pending.name}")
-        self._telegram.send_message(chat_id, texts.updated(item.name_he, entry.count))
+        catalog = self._catalog()
+        added = []
+        for name, count in [(pending.name, pending.count), *pending.more]:
+            item = ItemType(key=f"owner_{uuid4().hex[:8]}", name_he=name.strip(), added_by="owner")
+            try:
+                catalog.add(item)
+            except ValueError:
+                continue
+            self._store.upsert_item_type(item)
+            _, entry = self._corrections.add(snap, item.key, count, f"+ {name}")
+            added.append((item.name_he, entry.count))
+        if not added:
+            self._telegram.send_message(chat_id, texts.not_added())
+        elif len(added) == 1:
+            self._telegram.send_message(chat_id, texts.updated(*added[0]))
+        else:
+            lines = [texts.item_line(n, c) for n, c in added]
+            self._telegram.send_message(chat_id, "\n".join(texts.updated_many(lines)))
 
     # Morning (Cloud Scheduler)
 

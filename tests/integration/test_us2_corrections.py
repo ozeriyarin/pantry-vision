@@ -154,3 +154,43 @@ def test_button_tap_still_applies_when_telegram_refresh_fails(h):
     h.tap(f"remove:{snap_id}:hummus")
     assert h.entry("hummus").count == 0
     assert len(h.telegram.sent) == sent  # no "משהו השתבש" error message
+
+
+OWNER_LIST = """ביצים 6
+בירה 4
+חלב נטול לקטוז  1
+חלב שיבולת שועל 1
+טחינה 1
+ריבה 2
+אבקת מרק עוף 1"""
+
+
+def test_multi_line_list_applies_known_and_asks_once_for_unknown(h):
+    """Owner feedback 2026-10-20: a correction message may list one item per line."""
+    h.photo([box("eggs")])
+    reply = h.text(OWNER_LIST)
+    for line in ("ביצים ×6", "בירה ×4", "חלב צמחי ×1", "טחינה ×1", "ריבה ×2"):
+        assert line in reply
+    assert '"חלב נטול לקטוז"' in reply and '"אבקת מרק עוף"' in reply
+    assert h.button_data() == ["newitem:yes", "newitem:no"]
+    assert h.counts()["eggs"] == 6 and h.counts()["plant_milk"] == 1
+    h.tap("newitem:yes")
+    names = {i.name_he: i.key for i in h.store.list_item_types() if i.added_by == "owner"}
+    assert set(names) == {"חלב נטול לקטוז", "אבקת מרק עוף"}
+    assert h.counts()[names["חלב נטול לקטוז"]] == 1 and h.counts()[names["אבקת מרק עוף"]] == 1
+    assert "חלב נטול לקטוז ×1" in h.last_text() and "אבקת מרק עוף ×1" in h.last_text()
+
+
+def test_comma_separated_list_and_bad_lines_reported(h):
+    h.photo([box("eggs")])
+    reply = h.text("ביצים 3, בירה 2\nבלה בלה")
+    assert "ביצים ×3" in reply and "בירה ×2" in reply
+    assert 'לא הבנתי: "בלה בלה"' in reply
+    assert h.counts()["beer"] == 2
+
+
+def test_multi_line_all_known_needs_no_question(h):
+    h.photo([box("eggs")])
+    h.text("ביצים 2\nאין חלב")
+    assert h.telegram.sent[-1].buttons is None
+    assert h.counts()["eggs"] == 2

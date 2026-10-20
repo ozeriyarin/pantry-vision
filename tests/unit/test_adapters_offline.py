@@ -59,3 +59,11 @@ def test_run_record_has_no_image_fields():
 def test_photo_path_is_dated_under_photos_prefix():
     path = photo_path(NOW)
     assert path.startswith("photos/2026/10/20/") and path.endswith(".jpg")
+
+
+def test_pending_question_with_more_names_round_trips():
+    from pantry.domain.models import PendingQuestion
+
+    q = PendingQuestion(1, "new_item", "א", "s1", 1, NOW, (("ב", 2), ("ג", 3)))
+    back = PendingQuestion(**plain(q))
+    assert [(back.name, back.count), *[tuple(p) for p in back.more]] == [("א", 1), ("ב", 2), ("ג", 3)]

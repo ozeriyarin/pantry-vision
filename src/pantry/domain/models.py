@@ -132,6 +132,7 @@ class PendingQuestion:
     snapshot_id: str | None
     count: int
     created_at: datetime
+    more: tuple = ()  # further (name, count) pairs from a multi-line message
 
 
 def inventory_id(location: Location, key: str) -> str:

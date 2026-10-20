@@ -3,7 +3,7 @@
 items:
   - {key: eggs, name_he: ביצים, aliases: [ביצה, egg, eggs], prompt: egg, location_hint: fridge}
   - {key: milk, name_he: חלב, aliases: [milk], prompt: milk bottle, location_hint: fridge}
-  - {key: plant_milk, name_he: חלב צמחי, aliases: [משקה סויה, משקה שקדים, oat milk, almond milk, plant milk], prompt: plant milk carton, location_hint: fridge}
+  - {key: plant_milk, name_he: חלב צמחי, aliases: [משקה סויה, משקה שקדים, משקה שיבולת שועל, חלב שיבולת שועל, חלב שקדים, חלב סויה, oat milk, almond milk, plant milk], prompt: plant milk carton, location_hint: fridge}
   - {key: cottage, name_he: קוטג', aliases: [קוטג, cottage, cottage cheese], prompt: cottage cheese container, location_hint: fridge}
   - {key: yogurt, name_he: יוגורט, aliases: [יוגורטים, מעדן, yogurt, yoghurt], prompt: yogurt cup, location_hint: fridge}
   - {key: labneh, name_he: לבנה, aliases: [labneh], prompt: labneh tub, location_hint: fridge}
