@@ -9,6 +9,8 @@ from pantry.bot.commands import (
     Add,
     Done,
     Has,
+    ListLocations,
+    NewLocation,
     Query,
     Remove,
     SetCount,
@@ -23,6 +25,7 @@ from pantry.detection.fallback import Fallback
 from pantry.detection.pipeline import Pipeline
 from pantry.domain.corrections import CorrectionService
 from pantry.domain.items import ItemCatalog, normalise
+from pantry.domain.locations import LocationCatalog, LocationType
 from pantry.domain.models import ItemType, Location, PendingQuestion, RunRecord, Snapshot, SnapshotPhoto
 from pantry.domain.morning import MorningService
 from pantry.domain.snapshot import SessionService
@@ -58,6 +61,9 @@ class Bot:
         self._morning = MorningService(store, clock, settings.morning_tz)
         self._owners = sorted(settings.allowed_chat_ids)
 
+    def _places(self) -> LocationCatalog:
+        return LocationCatalog.merged(self._store.list_location_types())
+
     def _catalog(self) -> ItemCatalog:
         catalog = ItemCatalog(self._store.list_item_types(), strict=False)
         if catalog.skipped:
@@ -89,7 +95,8 @@ class Bot:
             self._telegram.send_message(update.chat_id, texts.no_food())
             return
 
-        location = parse_location(update.caption)
+        places = self._places()
+        location = parse_location(update.caption, places)
         if location is None and update.media_group_id:
             group = self._sessions.session_for_group(update.media_group_id)
             location = group.location if group else None
@@ -97,7 +104,7 @@ class Bot:
 
         photo = SnapshotPhoto(blob_path, update.photo_file_id, result.detections)
         snap = self._sessions.add_photo(location, update.media_group_id, photo, result.items)
-        text = texts.photo_reply(snap.location, self._lines(snap, catalog), result.skipped)
+        text = texts.photo_reply(places.name(snap.location), self._lines(snap, catalog), result.skipped)
         buttons = self._uncertain_buttons(snap, catalog)
         message_id = self._telegram.send_message(update.chat_id, text, buttons=buttons or None)
         self._sessions.add_reply(snap, message_id)
@@ -150,17 +157,25 @@ class Bot:
     # Text
 
     def _text(self, update: Update) -> None:
-        catalog = self._catalog()
+        catalog, places = self._catalog(), self._places()
+        intent = parse_text(update.text or "", places)
+        if isinstance(intent, NewLocation):
+            self._telegram.send_message(update.chat_id, self._new_location(places, intent.name))
+            return
+        if isinstance(intent, ListLocations):
+            self._telegram.send_message(
+                update.chat_id, texts.locations(places.name(k) for k in places.keys())
+            )
+            return
         segments = split_lines(update.text or "")
-        if len(segments) > 1 or any(split_location(s)[0] for s in segments):
-            reply, buttons = self._correct_many(update, catalog, segments)
+        if len(segments) > 1 or any(split_location(s, places)[0] for s in segments):
+            reply, buttons = self._correct_many(update, catalog, segments, places)
             self._telegram.send_message(update.chat_id, reply, buttons=buttons)
             return
-        intent = parse_text(update.text or "")
         if isinstance(intent, Query):
-            reply = self._inventory(catalog, intent.location)
+            reply = self._inventory(catalog, places, intent.location)
         elif isinstance(intent, Has):
-            reply = self._has(catalog, intent.name)
+            reply = self._has(catalog, places, intent.name)
         elif isinstance(intent, SetCount | Remove | Add):
             reply, buttons = self._correct(update, catalog, intent)
             self._telegram.send_message(update.chat_id, reply, buttons=buttons)
@@ -170,27 +185,43 @@ class Bot:
             if snap is None:
                 reply = texts.no_open_session()
             else:
-                reply = texts.session_closed(snap.location, [self._name(catalog, k) for k in zeroed])
+                zeroed_names = [self._name(catalog, k) for k in zeroed]
+                reply = texts.session_closed(places.name(snap.location), zeroed_names)
         else:
             reply = texts.not_understood()
         self._telegram.send_message(update.chat_id, reply)
 
-    def _inventory(self, catalog: ItemCatalog, location: Location | None) -> str:
-        groups: dict[Location, list[str]] = {}
-        for loc in [location] if location else list(Location):
+    def _inventory(self, catalog: ItemCatalog, places: LocationCatalog, location: Location | None) -> str:
+        groups: dict[str, list[str]] = {}
+        for loc in [location] if location else places.keys():
             entries = [e for e in self._store.get_inventory(loc) if e.count > 0]
             entries.sort(key=lambda e: self._name(catalog, e.key))
-            groups[loc] = [texts.item_line(self._name(catalog, e.key), e.count, e.uncertain) for e in entries]
+            lines = [texts.item_line(self._name(catalog, e.key), e.count, e.uncertain) for e in entries]
+            groups[places.name(loc)] = lines
         return texts.inventory(groups)
 
-    def _has(self, catalog: ItemCatalog, name: str) -> str:
+    def _has(self, catalog: ItemCatalog, places: LocationCatalog, name: str) -> str:
         item = catalog.resolve(name)
         if item is None:
             return texts.no_item(name)
         for entry in self._store.get_inventory():
             if entry.key == item.key and entry.count > 0:
-                return texts.has_item(item.name_he, entry.count, entry.location)
+                return texts.has_item(item.name_he, entry.count, places.name(entry.location))
         return texts.no_item(item.name_he)
+
+    def _new_location(self, places: LocationCatalog, name: str) -> str:
+        name = name.strip()
+        if places.has_name(name) or places.match(name):
+            return texts.location_exists(name)
+        if not valid_new_name(name):
+            return texts.not_understood()
+        location = LocationType(f"loc_{uuid4().hex[:8]}", name, added_by="owner")
+        try:
+            places.add(location)
+        except ValueError:
+            return texts.location_exists(name)
+        self._store.upsert_location_type(location)
+        return texts.location_added(name)
 
     # Corrections
 
@@ -240,17 +271,17 @@ class Bot:
             return self._store.latest_snapshot(location)
         return self._corrections.target(update.reply_to_message_id)
 
-    def _correct_many(self, update: Update, catalog: ItemCatalog, segments: list[str]):
+    def _correct_many(self, update: Update, catalog: ItemCatalog, segments: list[str], places=None):
         """One correction per line or comma; unknown names get a single yes/no question."""
         location: Location | None = None
         done, unknown, bad = [], [], []
         for raw in segments:
-            named, seg = split_location(raw)
+            named, seg = split_location(raw, places)
             location = named or location
             if not seg:
                 continue
             snap = self._target(update, location)
-            intent = parse_text(seg)
+            intent = parse_text(seg, places)
             if not isinstance(intent, SetCount | Remove | Add) or not valid_new_name(intent.name):
                 bad.append(seg)
                 continue
@@ -358,8 +389,8 @@ class Bot:
         plan = self._morning.plan()
         if plan is None:
             return {"sent": 0, "run_out": 0}
-        catalog = self._catalog()
-        text = texts.morning([(self._name(catalog, key), loc) for key, loc in plan.run_out])
+        catalog, places = self._catalog(), self._places()
+        text = texts.morning([(self._name(catalog, key), places.name(loc)) for key, loc in plan.run_out])
         for chat_id in self._owners:
             self._telegram.send_message(chat_id, text)
         self._morning.commit(plan)

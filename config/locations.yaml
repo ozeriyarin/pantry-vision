@@ -1,0 +1,5 @@
+# Built-in locations. The owner adds more from the chat ("מיקום חדש: מקרר שני"); those live in Firestore.
+locations:
+  - {key: fridge, name_he: מקרר, aliases: [fridge, refrigerator]}
+  - {key: freezer, name_he: מקפיא, aliases: [freezer]}
+  - {key: pantry, name_he: מזווה, aliases: [pantry, ארון]}

@@ -3,6 +3,11 @@
 Phase 1 output for [plan.md](plan.md). Firestore collections are prefixed `pantry_`. Times are UTC
 timestamps; display uses Asia/Jerusalem. Locations: `fridge`, `freezer`, `pantry`.
 
+## Location — `config/locations.yaml` + `pantry_locations/{key}`
+
+`{key, name_he, aliases, added_by: "seed" | "owner"}`. Keys `fridge`, `freezer`, `pantry` are built in and fridge
+is the default; owner-added keys are `loc_<hex>`. Every `location` field below holds one of these keys.
+
 ## ItemType — `pantry_item_types/{key}`
 
 Seeded from `config/items.yaml` on deploy (upsert, never deletes owner-added types).

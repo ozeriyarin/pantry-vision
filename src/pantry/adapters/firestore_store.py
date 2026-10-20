@@ -97,6 +97,18 @@ class FirestoreStore:
     def list_item_types(self) -> list[ItemType]:
         return [item_type_from(doc.to_dict()) for doc in self._col("item_types").stream()]
 
+    def list_location_types(self) -> list:
+        from pantry.domain.locations import LocationType
+
+        rows = (doc.to_dict() for doc in self._col("locations").stream())
+        return [
+            LocationType(r["key"], r["name_he"], tuple(r.get("aliases", [])), r.get("added_by", "owner"))
+            for r in rows
+        ]
+
+    def upsert_location_type(self, location) -> None:
+        self._col("locations").document(location.key).set(plain(location))
+
     def upsert_item_type(self, item: ItemType) -> None:
         self._col("item_types").document(item.key).set(plain(item))
 
@@ -110,7 +122,7 @@ class FirestoreStore:
     def latest_snapshot(self, location: Location | None = None) -> Snapshot | None:
         query = self._col("snapshots")
         if location:
-            query = query.where(filter=self._firestore.FieldFilter("location", "==", location.value))
+            query = query.where(filter=self._firestore.FieldFilter("location", "==", str(location)))
         docs = list(query.order_by("last_photo_at", direction="DESCENDING").limit(1).stream())
         return snapshot_from(docs[0].to_dict()) if docs else None
 
@@ -122,7 +134,7 @@ class FirestoreStore:
     def get_inventory(self, location: Location | None = None) -> list[InventoryEntry]:
         query = self._col("inventory")
         if location:
-            query = query.where(filter=self._firestore.FieldFilter("location", "==", location.value))
+            query = query.where(filter=self._firestore.FieldFilter("location", "==", str(location)))
         return [inventory_from(doc.to_dict()) for doc in query.stream()]
 
     def upsert_inventory(self, entry: InventoryEntry) -> None:

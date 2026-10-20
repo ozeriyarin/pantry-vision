@@ -2,14 +2,24 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import StrEnum
 from typing import Literal
 
 
-class Location(StrEnum):
-    FRIDGE = "fridge"
-    FREEZER = "freezer"
-    PANTRY = "pantry"
+class Location(str):
+    """A location key: a built-in one below or an owner-added one (config/locations.yaml, Firestore)."""
+
+    FRIDGE: "Location"
+    FREEZER: "Location"
+    PANTRY: "Location"
+
+    @property
+    def value(self) -> str:
+        return str(self)
+
+
+Location.FRIDGE = Location("fridge")
+Location.FREEZER = Location("freezer")
+Location.PANTRY = Location("pantry")
 
 
 @dataclass(frozen=True)

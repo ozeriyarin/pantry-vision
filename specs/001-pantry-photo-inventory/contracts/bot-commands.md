@@ -37,6 +37,16 @@ the replied-to photo, else the latest photo.
 Reply: `עודכן: ביצים ×4`. Unknown `<item>`: `לא מכיר "<item>". להוסיף כסוג מוצר חדש?` with buttons
 `כן` / `לא`; `כן` creates the item type and applies the correction.
 
+## Locations
+
+Built-in: מקרר, מקפיא, מזווה (`config/locations.yaml`). Owner-added ones are stored in `pantry_locations` and work
+everywhere a built-in one does: captions, `<loc>:` prefixes, "מה יש ב<loc>", the morning message.
+
+| Pattern | Reply |
+|---------|-------|
+| `מיקום חדש: <name>`, `new location <name>` | `נוסף מיקום: <name>. ...`; `כבר יש מיקום בשם "<name>".` if taken |
+| `מיקומים`, `locations` | `מיקומים: מקרר, מקפיא, מזווה, ...` |
+
 ## Queries (FR-006)
 
 | Pattern | Reply |

@@ -14,6 +14,7 @@
 - Q: Does an uncertain item enter the inventory? → A: Yes, marked uncertain; a correction clears the mark.
 - Q: Is the 80% count accuracy a launch gate for the zero-shot detector? → A: No. It is the fine-tuned target; zero-shot is a reported baseline.
 - Q: Does the 15-second reply limit include cold starts? → A: No. Cold starts are measured separately; no paid always-on instance.
+- Q: Can the owner add locations beyond fridge, freezer and pantry? → A: Yes, from the chat ("מיקום חדש: מקרר שני"); the three built-in ones stay the defaults.
 - Q: How are partial and overlapping photos handled? → A: Photos of one location within 5 minutes form a session, merged by the highest count per item. "סיימתי" marks the session as a full view that replaces the location's inventory; a session that times out updates only the items it saw.
 
 ## User Scenarios & Testing *(mandatory)*

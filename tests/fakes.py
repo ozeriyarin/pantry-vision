@@ -106,6 +106,7 @@ class InMemoryStore:
         self.calls: list[str] = []
         self.updates: dict[int, datetime] = {}
         self.item_types = {i.key: i for i in item_types or []}
+        self.location_types: dict = {}
         self.snapshots: dict[str, Snapshot] = {}
         self.inventory: dict[str, InventoryEntry] = {}
         self.corrections: list[Correction] = []
@@ -127,6 +128,14 @@ class InMemoryStore:
     def list_item_types(self):
         self._log("list_item_types")
         return list(self.item_types.values())
+
+    def list_location_types(self):
+        self._log("list_location_types")
+        return list(self.location_types.values())
+
+    def upsert_location_type(self, location):
+        self._log("upsert_location_type")
+        self.location_types[location.key] = location
 
     def upsert_item_type(self, item):
         self._log("upsert_item_type")
