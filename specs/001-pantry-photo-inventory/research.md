@@ -53,15 +53,21 @@ Phase 0 output for [plan.md](plan.md). Each entry: decision, rationale, alternat
   caption or no match means fridge. An album (`media_group_id`) inherits the caption of its first photo.
 - **Source**: spec clarification 2026-10-20.
 
-## R5. Multi-photo snapshot merge
+## R5. Photo sessions and merge
 
-- **Decision**: A photo joins the open snapshot of the same location when it arrives within 60 s of that
-  snapshot's last photo, or shares its `media_group_id`. Counts are summed across the photos of a snapshot,
-  since shelf-by-shelf photos show different shelves. After each photo the location's inventory is
-  rewritten from the merged snapshot, and the reply shows the merged totals.
-- **Alternatives**: max per item across photos (under-counts the same item on two shelves); waiting 60 s
-  before replying (breaks the 15 s reply target).
-- **Known limit**: overlapping photos double-count. The owner corrects, and the correction becomes a label.
+- **Decision**: Photos of one location within `session_window_s` (default 300 s) of the session's last photo,
+  or sharing a `media_group_id`, form one snapshot. Counts merge by the highest count per item across the
+  photos. Each photo updates the seen items at once and the reply shows running totals. "סיימתי" or "done"
+  closes the session as full: unseen items of that location go to 0. A session that times out is partial
+  and zeroes nothing. Items reach 0 otherwise only through corrections or the remove button.
+- **Rationale**: the owner's sample photos are all partial views (door, shelf, drawer) and two of them
+  overlap. Summing double-counts overlap; replacing on every photo zeroes everything out of frame and feeds
+  false run-outs to the morning message.
+- **Alternatives**: sum across photos (double-counts overlap); seen-items-only with no full close (stale
+  items never leave unless corrected); zero after two missed sessions (still false run-outs when the same
+  part is photographed twice).
+- **Known limit**: the same item on two shelves is under-counted; the owner corrects, and the correction
+  becomes a label.
 
 ## R6. Correction and query grammar
 

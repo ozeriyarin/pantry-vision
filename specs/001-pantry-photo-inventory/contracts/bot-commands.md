@@ -8,10 +8,12 @@ folded, niqqud and punctuation removed, English lowercased). `<n>` is a non-nega
 
 | Input | Effect | Reply |
 |-------|--------|-------|
-| photo, caption `<loc>` or none | detect, fallback on uncertain crops, merge into snapshot, rewrite inventory | `במקרר:` then one line per item `ביצים ×6`, uncertain lines end with ` ?` and carry buttons |
+| photo, caption `<loc>` or none | detect, fallback on uncertain crops, merge into the session (highest count), upsert seen items | `במקרר:` then one line per item `ביצים ×6`, uncertain lines end with ` ?` and carry buttons |
 | photo with no food found | nothing stored | `לא מצאתי מוצרים בתמונה.` |
 | photo too dark or blurry (mean luminance or Laplacian variance below config) | nothing stored | `התמונה לא ברורה, אפשר לצלם שוב?` |
 | fallback skipped (budget or error) for k items | items kept uncertain | extra line `k פריטים לא נבדקו שוב.` |
+
+Every photo reply ends with `כשסיימתם לצלם את כל ה<loc>, שלחו "סיימתי".`
 
 Uncertain line buttons: `✓` (callback `confirm:<snapshot>:<key>`) and `✗` (callback
 `remove:<snapshot>:<key>`).
@@ -25,6 +27,7 @@ Uncertain line buttons: `✓` (callback `confirm:<snapshot>:<key>`) and `✗` (c
 | `להוסיף <item> [<n>]`, `add <item> [<n>]` | missed | add, default n = 1 |
 | callback `confirm:…` | confirm | clear uncertain |
 | callback `remove:…` | false | set count to 0 |
+| `סיימתי`, `done` | close | close the open session as full; unseen items of that location go to 0; reply lists them, or "שום דבר לא נגמר" |
 
 Reply: `עודכן: ביצים ×4`. Unknown `<item>`: `לא מכיר "<item>". להוסיף כסוג מוצר חדש?` with buttons
 `כן` / `לא`; `כן` creates the item type and applies the correction.

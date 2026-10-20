@@ -14,6 +14,7 @@
 - Q: Does an uncertain item enter the inventory? → A: Yes, marked uncertain; a correction clears the mark.
 - Q: Is the 80% count accuracy a launch gate for the zero-shot detector? → A: No. It is the fine-tuned target; zero-shot is a reported baseline.
 - Q: Does the 15-second reply limit include cold starts? → A: No. Cold starts are measured separately; no paid always-on instance.
+- Q: How are partial and overlapping photos handled? → A: Photos of one location within 5 minutes form a session, merged by the highest count per item. "סיימתי" marks the session as a full view that replaces the location's inventory; a session that times out updates only the items it saw.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -31,6 +32,8 @@ The owner opens the fridge, takes a photo and sends it to the bot with the locat
 2. **Given** a photo where one item is recognised with low certainty, **When** the reply is sent, **Then** that item is marked as uncertain (for example "?") rather than presented as fact.
 3. **Given** a photo with no recognisable food items, **When** it is sent, **Then** the bot says it found nothing and leaves the inventory unchanged.
 4. **Given** a message from any chat that is not the owner's, **When** it arrives, **Then** the bot does not process it and does not reply with any inventory data.
+5. **Given** milk in the fridge inventory, **When** the owner sends a door photo without milk and does not send "סיימתי", **Then** milk keeps its count.
+6. **Given** an open fridge session, **When** the owner sends "סיימתי", **Then** fridge items not seen in the session are set to 0 and the bot lists them.
 
 ---
 
@@ -62,11 +65,13 @@ Every morning at a fixed time the owner gets one short Hebrew message listing it
 
 1. **Given** milk was in the inventory at the previous morning message and the latest snapshot shows none, **When** the morning message is sent, **Then** it lists milk as run out.
 2. **Given** nothing ran out since the previous morning, **When** the morning time comes, **Then** the bot sends a one-line "all good" message rather than nothing, so the owner knows it ran.
+3. **Given** a partial session that did not show milk, **When** the morning message is sent, **Then** milk is not listed as run out.
 
 ### Edge Cases
 
-- A blurry, dark or partial photo: the bot says it could not see clearly and suggests retaking it; inventory unchanged.
-- Several photos of the same location sent within a minute (shelf by shelf): treated as one snapshot whose items are merged, not each one replacing the last.
+- A blurry or dark photo: the bot says it could not see clearly and suggests retaking it; inventory unchanged.
+- A photo of part of a location: updates only the items it shows; nothing is set to 0 until the owner sends "סיימתי" or corrects it.
+- Several photos of the same location within the session window (shelf by shelf, possibly overlapping): one snapshot, merged by the highest count per item, not each one replacing the last.
 - Packaged items that look alike (different yogurt brands): grouped under one item type in v1.
 - The second recognition step is unavailable or its monthly budget is exhausted: the bot replies with what the first step found and says some items may be missing; it never fails silently.
 - Hebrew and English item names in corrections ("milk" / "חלב") map to the same item type.
@@ -80,7 +85,7 @@ Every morning at a fixed time the owner gets one short Hebrew message listing it
 - **FR-002**: System MUST serve only an allow-listed set of chat ids and ignore all others without revealing data.
 - **FR-003**: System MUST mark items recognised below a configurable certainty threshold as uncertain in the reply; uncertain items enter the inventory with an uncertain mark that a correction clears.
 - **FR-004**: System MUST re-check uncertain items with a second, more capable recognition step, limited by a monthly spending cap, and record the cost of every such check.
-- **FR-005**: System MUST keep a current inventory per location, replaced by each new snapshot, with photos sent within one minute for the same location merged into one snapshot.
+- **FR-005**: System MUST keep a current inventory per location. Photos of one location within a configurable session window (default 5 minutes) form one snapshot, merged by the highest count per item. A snapshot the owner closes with "סיימתי" replaces that location's inventory; a snapshot that times out updates only the items it saw.
 - **FR-006**: Users MUST be able to query the inventory in Hebrew ("מה יש לי", "יש <item>?", per location).
 - **FR-007**: Users MUST be able to correct counts, remove items and add missed items with short Hebrew or English replies, and the inventory MUST update immediately.
 - **FR-008**: System MUST store each correction with a reference to its photo as a labelled example for later evaluation and training.
@@ -94,7 +99,7 @@ Every morning at a fixed time the owner gets one short Hebrew message listing it
 ### Key Entities
 
 - **Item type**: a kind of food the owner keeps (Hebrew name, English aliases, location hint).
-- **Snapshot**: one or more photos of one location taken within a minute; has a time, location and detected items with counts and certainty.
+- **Snapshot**: one or more photos of one location within the session window, closed as full ("סיימתי") or partial (timeout); has a time, location and detected items with counts and certainty.
 - **Inventory entry**: the current count of an item type in a location and the time it was last seen.
 - **Correction**: an owner fix tied to a snapshot (item type, old count, new count, kind: count, missed or false); the source of labelled examples.
 - **Run record**: per-photo counts, certainty, second-step calls, cost and latency; no images.

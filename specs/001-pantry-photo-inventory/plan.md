@@ -8,8 +8,8 @@
 
 A FastAPI service on Cloud Run receives Telegram webhooks from one allow-listed chat. A photo goes through a
 YOLO-World zero-shot detector exported to ONNX and run on CPU; boxes in the uncertain score band are cropped
-and checked by Claude Haiku 5.5 under a monthly cap. Results merge into a per-location snapshot (60 s window)
-that rewrites the inventory in Firestore, and the bot replies in Hebrew. A deterministic Hebrew and English
+and checked by Claude Haiku 5.5 under a monthly cap. Results merge into a per-location session (5 min window, highest count per item);
+"סיימתי" closes it as a full view that replaces the inventory in Firestore, and the bot replies in Hebrew. A deterministic Hebrew and English
 grammar handles corrections and queries; every correction is stored with its snapshot as a training label.
 Cloud Scheduler calls the service at 07:30 Asia/Jerusalem for the run-out message. Expiry tracking is out of
 v1. Detection quality is measured offline on the owner's labelled photos. Details in [research.md](research.md).
@@ -48,8 +48,8 @@ instance, concurrency 1; no image bytes in logs or run records; Hebrew owner-fac
 |-----------|-----------------------|--------|
 | I. Hard Budget Cap | Cost table in R12 (about 0.40 USD, worst case 1.30 USD). max-instances 1, scale to zero, Haiku app cap 1 USD plus the Anthropic console limit, GCP budget alert at 10 USD. Every fallback call writes `cost_usd`. | Pass |
 | II. Cheap Model First | ONNX detector handles every photo; only crops in the uncertain band go to Haiku; thresholds in `config/settings.yaml`; corrections parsed without an LLM; calls counted in run records. | Pass |
-| III. Measured, Not Claimed | `eval/run_eval.py` reports mAP@0.5, per-item precision and recall, count accuracy; zero-shot baseline row first, fine-tuned row later; training on Colab or Kaggle only. | Pass |
-| IV. Privacy by Default | Private bucket, public access prevention, 30-day lifecycle on `photos/`; only crops leave GCP; run records hold no images; logs carry ids and types, never captions or bytes; allow-listed chat ids. | Pass (R10 confirmed: training photos stay outside the service) |
+| III. Measured, Not Claimed | `eval/run_eval.py` reports mAP@0.5, per-item precision and recall, count accuracy; zero-shot baseline row first, fine-tuned row later; training on Colab or Kaggle only. The first deploy is the baseline per v1.1.0. | Pass |
+| IV. Privacy by Default | Private bucket, public access prevention, 30-day lifecycle on `photos/`; only crops leave GCP; run records hold no images; logs carry ids and types, never captions or bytes; allow-listed chat ids. | Pass under v1.1.0 (private training workspace allowed; R10 confirmed) |
 | V. Cloud-Native, Laptop-Free | Webhook, detector, storage and scheduler all in GCP; scripted `scripts/deploy.ps1`. Only training and eval touch the laptop, which the constitution places outside the service. | Pass |
 | VI. Small, Testable Increments | Stories map to P1, P2, P3 task phases; each acceptance scenario gets a test quoting it; every external service behind a port with a fake. | Pass |
 
@@ -81,7 +81,7 @@ src/pantry/
 ├── ports.py              # Protocols: TelegramClient, Store, BlobStore, Detector, Verifier, Clock
 ├── domain/
 │   ├── items.py          # item list, alias normalisation
-│   ├── snapshot.py       # 60 s merge, inventory rewrite
+│   ├── snapshot.py       # sessions, highest-count merge, full or partial close
 │   ├── corrections.py    # apply count / missed / false / confirm
 │   └── morning.py        # run-out against baseline
 ├── detection/

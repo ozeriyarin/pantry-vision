@@ -35,7 +35,7 @@ Before every commit: `uv run pytest` and `uv run ruff check` pass, chained with 
 - [ ] T002 [P] Extend `.gitignore` with `.env`, `models/`, `*.onnx`, `*.pt`, `data/`, `*.jpg`, `*.jpeg`, `*.png`, `eval/out/`
 - [ ] T003 [P] Create `.env.example` listing setting names only, no values: `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_REGION`, `TELEGRAM_ALLOWED_CHAT_IDS`, `PANTRY_BUCKET`, `PANTRY_TELEGRAM_BOT_TOKEN`, `PANTRY_TELEGRAM_WEBHOOK_SECRET`, `PANTRY_ANTHROPIC_API_KEY`
 - [ ] T004 [P] Create `config/items.yaml` with about 30 item types, each with `key` ("lowercase ascii slug, unique"), `name_he`, `aliases` (Hebrew and English, "unique across all types"), `prompt` (English detector prompt), `location_hint` (fridge, freezer, pantry or null); include eggs/ביצים, milk/חלב, cottage/קוטג', hummus/חומוס, yogurt/יוגורט (brands grouped)
-- [ ] T005 [P] Create `config/settings.yaml`: `min_score`, `uncertain_score`, `merge_window_s: 60`, `fallback.cap_usd: 1.00`, `fallback.model: claude-haiku-5-5`, `fallback.price_in_per_mtok: 0.10`, `fallback.price_out_per_mtok: 0.50`, `crop.pad: 0.10`, `crop.max_side: 384`, `quality.min_luminance`, `quality.min_laplacian_var`, `morning.tz: Asia/Jerusalem`, `pending_ttl_min: 10`, `detector.imgsz: 640`
+- [ ] T005 [P] Create `config/settings.yaml`: `min_score`, `uncertain_score`, `session_window_s: 300`, `fallback.cap_usd: 1.00`, `fallback.model: claude-haiku-5-5`, `fallback.price_in_per_mtok: 0.10`, `fallback.price_out_per_mtok: 0.50`, `crop.pad: 0.10`, `crop.max_side: 384`, `quality.min_luminance`, `quality.min_laplacian_var`, `morning.tz: Asia/Jerusalem`, `pending_ttl_min: 10`, `detector.imgsz: 640`
 
 ---
 
@@ -69,8 +69,8 @@ Before every commit: `uv run pytest` and `uv run ruff check` pass, chained with 
 ### Tests for User Story 1 (write first, see them fail)
 
 - [ ] T018 [P] [US1] Integration tests in `tests/integration/test_us1_photo.py`, one per acceptance scenario with its text quoted: 6 eggs and 2 milk reply "ביצים ×6" and "חלב ×2" and the fridge query returns the same; low-certainty item marked "?"; no food found leaves inventory unchanged; plus caption מקפיא routes to freezer, no caption means fridge
-- [ ] T019 [P] [US1] Edge-case tests in `tests/integration/test_us1_edges.py`: blurry or dark photo asks for a retake and leaves inventory unchanged; two photos of one location within 60 s merge with summed counts; a photo 61 s later opens a new snapshot; album photos share a snapshot by `media_group_id`; fallback skipped for budget reports "k פריטים לא נבדקו שוב"
-- [ ] T020 [P] [US1] Unit tests in `tests/unit/test_snapshot.py`: merge window, `media_group_id`, sum rule, inventory rewrite sets absent items of that location to 0, uncertain flag carried into the inventory
+- [ ] T019 [P] [US1] Edge-case tests in `tests/integration/test_us1_edges.py`: blurry or dark photo asks for a retake and leaves inventory unchanged; a door photo without milk and no "סיימתי" keeps milk (Story 1 scenario 5, quoted); "סיימתי" sets unseen fridge items to 0 and lists them (scenario 6, quoted); overlapping photos merge by highest count; a photo after the window opens a new session; album photos share a session by `media_group_id`; fallback skipped for budget reports "k פריטים לא נבדקו שוב"
+- [ ] T020 [P] [US1] Unit tests in `tests/unit/test_snapshot.py`: session window, `media_group_id`, highest-count merge, seen-item upsert, timeout close zeroes nothing, `full` close sets absent items of that location to 0, uncertain flag carried into the inventory
 - [ ] T021 [P] [US1] Unit tests in `tests/unit/test_fallback.py`: only scores in `[min_score, uncertain_score)` are sent; spend at or above cap skips the call; cost computed from usage at 0.10 / 0.50 USD per million tokens and added to the budget; `refusal` and API errors leave the item uncertain; verifier answer "none" drops the box
 - [ ] T022 [P] [US1] Unit tests in `tests/unit/test_commands_query.py`: "מה יש לי", "מה יש לי במקרר", "יש ביצים?", "יש ביצים" parse to the right intents; caption location parsing
 
@@ -80,9 +80,9 @@ Before every commit: `uv run pytest` and `uv run ruff check` pass, chained with 
 - [ ] T024 [P] [US1] Implement `src/pantry/detection/quality.py`: mean luminance and Laplacian variance against the settings thresholds
 - [ ] T025 [US1] Implement `src/pantry/detection/fallback.py`: pad 10 percent, resize long side to 384, budget check before each call, concurrent calls, budget increment after; and `src/pantry/adapters/anthropic_verifier.py`: `claude-haiku-5-5`, structured output `{"item": <known key> | "none", "count": int}` via `output_config.format` with the key enum, thinking disabled, effort `low`, check `stop_reason` before reading content
 - [ ] T026 [US1] Implement `src/pantry/detection/pipeline.py`: quality check, detect, drop below `min_score`, certain at or above `uncertain_score`, verify the band in between, return counts per key with score, uncertain flag and source
-- [ ] T027 [US1] Implement `src/pantry/domain/snapshot.py`: join or open a snapshot ("now - last_photo_at <= 60 s" or same `media_group_id`), sum counts, rewrite the location's inventory, store `reply_message_ids`
-- [ ] T028 [US1] Implement query and caption parsing in `src/pantry/bot/commands.py`
-- [ ] T029 [US1] Implement photo and query flows in `src/pantry/bot/handlers.py`: download largest photo size, store blob, pipeline, snapshot, reply with uncertain lines ending " ?" plus `✓`/`✗` buttons (`confirm:<snapshot>:<key>`, `remove:<snapshot>:<key>`), "not checked" line when fallback skipped, then a `RunRecord` with counts, scores, fallback calls, skipped, cost, `latency_ms`, `cold_start`
+- [ ] T027 [US1] Implement `src/pantry/domain/snapshot.py`: join or open a session ("now - last_photo_at <= session_window_s" or same `media_group_id`), merge by highest count, upsert seen items after each photo, close as full ("סיימתי") or partial (timeout, checked lazily on the next message), store `reply_message_ids`
+- [ ] T028 [US1] Implement query, caption and "סיימתי"/"done" parsing in `src/pantry/bot/commands.py`
+- [ ] T029 [US1] Implement photo and query flows in `src/pantry/bot/handlers.py`: download largest photo size, store blob, pipeline, snapshot, reply with running totals, the "סיימתי" hint, uncertain lines ending " ?" plus `✓`/`✗` buttons (`confirm:<snapshot>:<key>`, `remove:<snapshot>:<key>`), "not checked" line when fallback skipped, then a `RunRecord` with counts, scores, fallback calls, skipped, cost, `latency_ms`, `cold_start`
 - [ ] T030 [US1] Implement `src/pantry/detection/smoke.py` CLI per quickstart step 2
 
 **Checkpoint**: US1 tests green; the MVP answers photos and queries.
@@ -119,7 +119,7 @@ Before every commit: `uv run pytest` and `uv run ruff check` pass, chained with 
 
 ### Tests for User Story 3 (write first, see them fail)
 
-- [ ] T037 [P] [US3] Integration tests in `tests/integration/test_us3_morning.py`, scenarios quoted: milk in the baseline and absent now is listed as run out; nothing ran out sends the one-line "all good"; first run with no baseline sends "all good" and writes one; a second call on the same Asia/Jerusalem date sends nothing
+- [ ] T037 [P] [US3] Integration tests in `tests/integration/test_us3_morning.py`, scenarios quoted: milk in the baseline and absent now is listed as run out; nothing ran out sends the one-line "all good"; first run with no baseline sends "all good" and writes one; a second call on the same Asia/Jerusalem date sends nothing; a partial session that did not show milk does not list milk as run out (Story 3 scenario 3, quoted)
 - [ ] T038 [P] [US3] Contract tests in `tests/contract/test_morning_auth.py`: missing token, wrong audience and wrong service-account email each give 401 (token verifier injected as a fake)
 
 ### Implementation for User Story 3
@@ -138,7 +138,7 @@ Before every commit: `uv run pytest` and `uv run ruff check` pass, chained with 
 - [ ] T041 Create `Dockerfile` (python:3.11-slim, non-root user, runtime deps only, copies `config/` and `models/`) and `cloudbuild.yaml` (step copying `gs://$_BUCKET/models/` into the build context, then build and push, `logging: CLOUD_LOGGING_ONLY`), following `C:\zchut-agent`
 - [ ] T042 Write `scripts/seed_items.py`: upsert `config/items.yaml` into `pantry_item_types`, never deleting `added_by: owner` types
 - [ ] T043 Write `scripts/deploy.ps1` (pwsh 7, Cloud SDK on PATH, values from `.env`, never printed) with steps `check`, `setup` (APIs; private bucket with public access prevention and 30-day delete on `photos/`; service accounts `pantry-bot`, `pantry-build`, `pantry-scheduler` with least roles; Artifact Registry repo with keep-2 cleanup; Firestore TTL on `pantry_updates.received_at`), `secrets`, `build`, `deploy` (min 0, max 1, concurrency 1, 2 GiB, 1 vCPU, timeout 60 s), `webhook` (`setWebhook` with secret, `max_connections=1`, `allowed_updates`), `scheduler` (`pantry-morning`, `30 7 * * *`, Asia/Jerusalem, OIDC), `budget` (10 USD, alerts 50/90/100 percent), `all`
-- [ ] T044 Deploy from a pushed commit and run quickstart steps 4 to 6; record cold and warm reply times from `pantry_runs`; send two photos back to back and confirm two replies in send order (edge case "processed in order, each gets its own reply")
+- [ ] T044 Deploy from a pushed commit and run the detector smoke test on the five spike photos first, then quickstart steps 4 to 6; record cold and warm reply times from `pantry_runs`; send two photos back to back and confirm two replies in send order (edge case "processed in order, each gets its own reply")
 
 ---
 
@@ -147,7 +147,7 @@ Before every commit: `uv run pytest` and `uv run ruff check` pass, chained with 
 - [ ] T045 [P] Implement `eval/metrics.py` (mAP@0.5, per-item precision and recall, count accuracy) with `tests/unit/test_metrics.py` on hand-computed fixtures
 - [ ] T046 Implement `eval/run_eval.py` per quickstart step 3, writing a Markdown table to `eval/out/`
 - [ ] T047 [P] Write `scripts/export_dataset.py` (owner-run, research R10): download photos that have corrections before the 30-day delete, plus detections and corrections as JSON for Label Studio pre-annotation, into a local folder outside the repo
-- [ ] T048 [P] Write `training/finetune.ipynb` for Colab or Kaggle: train from the labelled export, export ONNX via the T006 path
+- [ ] T048 [P] Write `training/finetune.ipynb` for Colab or Kaggle (private workspace per constitution v1.1.0, Principle IV): train from the labelled export, export ONNX via the T006 path
 - [ ] T049 [P] Privacy tests in `tests/contract/test_privacy.py`: `RunRecord` has no image fields; captured logs during a photo flow hold no caption text, image bytes or secret values
 - [ ] T050 Run the zero-shot eval on the labelled set and write `README.md`: what it does, architecture, cost table from R12, eval table with the zero-shot baseline row, privacy notes, Ultralytics AGPL note
 - [ ] T051 Close the spec: set `**Status**` in `specs/001-pantry-photo-inventory/spec.md` to shipped with the deployed commit sha, and update the State section of `CLAUDE.md`

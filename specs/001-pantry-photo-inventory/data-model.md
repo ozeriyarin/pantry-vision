@@ -23,15 +23,17 @@ FR-009: the list is data, editable in `config/items.yaml` or by the bot's new-it
 | Field | Type | Rules |
 |-------|------|-------|
 | location | str | one of the locations |
-| opened_at, last_photo_at | timestamp | a photo joins when `now - last_photo_at <= 60 s` or same `media_group_id` |
+| opened_at, last_photo_at | timestamp | a photo joins when `now - last_photo_at <= session_window_s` (default 300) or same `media_group_id` |
 | media_group_id | str or null | |
 | photos | list[{blob_path, telegram_file_id, detections}] | blob path only, never image bytes |
-| items | map[key -> {count:int, score:float, uncertain:bool, source:`detector`/`fallback`}] | sum over photos |
+| items | map[key -> {count:int, score:float, uncertain:bool, source:`detector`/`fallback`}] | highest count per item across photos |
+| closed_by | `done` / `timeout` / null | null while open |
+| full | bool | true only when closed by "סיימתי" / "done" |
 | reply_message_ids | list[int] | lets a reply-to correction find its snapshot |
 
 Each detection: `{key, box:[x1,y1,x2,y2], score, fallback: null | {item, count, cost_usd}}`.
 
-States: `open` while within the 60 s window, then implicitly `closed`. A new photo on an empty result
+States: `open` within the session window; `closed` by "סיימתי" (full) or by timeout (partial). A new photo on an empty result
 (no food found) creates no snapshot and leaves inventory unchanged (Story 1, scenario 3).
 
 ## InventoryEntry — `pantry_inventory/{location}__{key}`
@@ -44,8 +46,9 @@ States: `open` while within the 60 s window, then implicitly `closed`. A new pho
 | last_seen_at | timestamp | |
 | snapshot_id | str | last snapshot that set it |
 
-Rewritten for a location after each photo of a snapshot (FR-005): entries of that location not in the
-snapshot are set to count 0. Corrections update a single entry immediately (FR-007).
+Seen items are upserted after each photo of a snapshot (FR-005). Absent items of the location are set to
+count 0 only when the snapshot closes with `full=true`. Corrections update a single entry immediately
+(FR-007).
 
 ## Correction — `pantry_corrections/{id}`
 
