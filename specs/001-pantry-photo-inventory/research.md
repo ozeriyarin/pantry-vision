@@ -153,5 +153,6 @@ figures are shared with zchut-agent on the same billing account and are re-check
 
 Warm path estimate: Telegram file download 0.5 s, decode and detect 1 s, fallback crops in parallel 1.5 s,
 Firestore writes 0.3 s, reply 0.3 s: about 4 s. Cold start adds container start, imports and ONNX session
-load, estimated 4 to 8 s, measured separately per the clarification. Every run record stores `latency_ms`
+load, estimated 4 to 8 s, measured separately per the clarification. First real photo (2026-10-20): processing 6.6 s, total 26.7 s on a cold start (about 20 s of container
+start); 37 uncertain boxes, 8 checked by Claude for 0.0007 USD, 29 left uncertain. Every run record stores `latency_ms`
 and `cold_start`.
