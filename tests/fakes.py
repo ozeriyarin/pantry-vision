@@ -35,7 +35,7 @@ class SentMessage:
 class FakeTelegram:
     sent: list[SentMessage] = field(default_factory=list)
     answered: list[tuple[str, str | None]] = field(default_factory=list)
-    cleared: list[tuple[int, int]] = field(default_factory=list)
+    markups: list[tuple[int, int, Buttons | None]] = field(default_factory=list)
     files: dict[str, bytes] = field(default_factory=dict)
     _next_id: int = 1000
 
@@ -47,8 +47,8 @@ class FakeTelegram:
     def answer_callback(self, callback_id, text=None) -> None:
         self.answered.append((callback_id, text))
 
-    def clear_buttons(self, chat_id, message_id) -> None:
-        self.cleared.append((chat_id, message_id))
+    def set_buttons(self, chat_id, message_id, buttons) -> None:
+        self.markups.append((chat_id, message_id, buttons))
 
     def download_file(self, file_id) -> bytes:
         return self.files[file_id]

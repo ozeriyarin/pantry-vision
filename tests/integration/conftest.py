@@ -22,11 +22,14 @@ class Harness:
         self.client = TestClient(create_app(settings, store, telegram, clock, self.bot.handle, "fake"))
         self._update = 0
 
-    def _post(self, message: dict) -> None:
+    def _post(self, message: dict, callback: dict | None = None) -> None:
         self._update += 1
-        message.setdefault("message_id", self._update)
-        message.setdefault("chat", {"id": OWNER})
-        payload = {"update_id": self._update, "message": message}
+        if callback is not None:
+            payload = {"update_id": self._update, "callback_query": callback}
+        else:
+            message.setdefault("message_id", self._update)
+            message.setdefault("chat", {"id": OWNER})
+            payload = {"update_id": self._update, "message": message}
         r = self.client.post(
             "/telegram/webhook", json=payload, headers={"X-Telegram-Bot-Api-Secret-Token": SECRET}
         )
@@ -45,9 +48,29 @@ class Harness:
         self._post(msg)
         return self.last_text()
 
-    def text(self, text: str) -> str:
-        self._post({"text": text})
+    def text(self, text: str, reply_to: int | None = None) -> str:
+        msg = {"text": text}
+        if reply_to:
+            msg["reply_to_message"] = {"message_id": reply_to}
+        self._post(msg)
         return self.last_text()
+
+    def tap(self, data: str, message_id: int | None = None) -> None:
+        """Press an inline button on a bot message (default: the last one sent)."""
+        message_id = message_id or self.telegram.sent[-1].message_id
+        cb = {
+            "id": f"cb{self._update}",
+            "data": data,
+            "message": {"message_id": message_id, "chat": {"id": OWNER}},
+        }
+        self._post({}, callback=cb)
+
+    def button_data(self, message_index: int = -1) -> list[str]:
+        buttons = self.telegram.sent[message_index].buttons or []
+        return [data for row in buttons for _, data in row]
+
+    def entry(self, key: str, location="fridge"):
+        return next(e for e in self.store.get_inventory() if e.key == key and e.location.value == location)
 
     def last_text(self) -> str:
         return self.telegram.sent[-1].text

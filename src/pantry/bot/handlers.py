@@ -1,16 +1,17 @@
-"""Photo, query and done flows. Corrections and callbacks arrive with User Story 2."""
+"""Photo, query, correction, button and done flows."""
 
 import time
 from uuid import uuid4
 
 from pantry.bot import texts
-from pantry.bot.commands import Done, Has, Query, parse_location, parse_text
+from pantry.bot.commands import Add, Done, Has, Query, Remove, SetCount, parse_location, parse_text
 from pantry.bot.updates import Update
 from pantry.config import Settings
 from pantry.detection.fallback import Fallback
 from pantry.detection.pipeline import Pipeline
+from pantry.domain.corrections import CorrectionService
 from pantry.domain.items import ItemCatalog
-from pantry.domain.models import Location, RunRecord, Snapshot, SnapshotPhoto
+from pantry.domain.models import ItemType, Location, PendingQuestion, RunRecord, Snapshot, SnapshotPhoto
 from pantry.domain.snapshot import SessionService
 from pantry.ports import BlobStore, Clock, Detector, Store, TelegramClient, Verifier
 
@@ -33,13 +34,15 @@ class Bot:
         fallback = Fallback(verifier, store, clock, settings.fallback, settings.crop)
         self._pipeline = Pipeline(detector, fallback, settings)
         self._sessions = SessionService(store, clock, settings.session_window_s)
+        self._corrections = CorrectionService(store, clock)
+        self._pending_ttl_s = settings.pending_ttl_min * 60
 
     def _catalog(self) -> ItemCatalog:
         return ItemCatalog(self._store.list_item_types())
 
     def handle(self, update: Update) -> None:
         if update.callback:
-            self._telegram.answer_callback(update.callback.id)
+            self._callback(update)
         elif update.photo_file_id:
             self._photo(update)
         elif update.text is not None:
@@ -70,7 +73,8 @@ class Bot:
 
         photo = SnapshotPhoto(blob_path, update.photo_file_id, result.detections)
         snap = self._sessions.add_photo(location, update.media_group_id, photo, result.items)
-        text, buttons = self._photo_reply(snap, catalog, result.skipped)
+        text = texts.photo_reply(snap.location, self._lines(snap, catalog), result.skipped)
+        buttons = self._uncertain_buttons(snap, catalog)
         message_id = self._telegram.send_message(update.chat_id, text, buttons=buttons or None)
         self._sessions.add_reply(snap, message_id)
 
@@ -95,19 +99,24 @@ class Bot:
             )
         )
 
-    def _photo_reply(self, snap: Snapshot, catalog: ItemCatalog, skipped: int):
-        lines, buttons = [], []
-        for key, item in sorted(snap.items.items(), key=lambda kv: self._name(catalog, kv[0])):
-            name = self._name(catalog, key)
-            lines.append(texts.item_line(name, item.count, item.uncertain))
-            if item.uncertain:
-                buttons.append(
+    def _lines(self, snap: Snapshot, catalog: ItemCatalog) -> list[str]:
+        items = sorted(snap.items.items(), key=lambda kv: self._name(catalog, kv[0]))
+        return [texts.item_line(self._name(catalog, k), v.count, v.uncertain) for k, v in items]
+
+    def _uncertain_buttons(self, snap: Snapshot, catalog: ItemCatalog) -> list:
+        """One ✓/✗ row per item of the snapshot that is still uncertain in the inventory."""
+        uncertain = {e.key for e in self._store.get_inventory(snap.location) if e.uncertain}
+        rows = []
+        for key in sorted(snap.items, key=lambda k: self._name(catalog, k)):
+            if key in uncertain and snap.items[key].uncertain:
+                name = self._name(catalog, key)
+                rows.append(
                     [
                         (f"{texts.CONFIRM} {name}", f"confirm:{snap.id}:{key}"),
                         (f"{texts.REMOVE} {name}", f"remove:{snap.id}:{key}"),
                     ]
                 )
-        return texts.photo_reply(snap.location, lines, skipped), buttons
+        return rows
 
     @staticmethod
     def _name(catalog: ItemCatalog, key: str) -> str:
@@ -123,6 +132,10 @@ class Bot:
             reply = self._inventory(catalog, intent.location)
         elif isinstance(intent, Has):
             reply = self._has(catalog, intent.name)
+        elif isinstance(intent, SetCount | Remove | Add):
+            reply, buttons = self._correct(update, catalog, intent)
+            self._telegram.send_message(update.chat_id, reply, buttons=buttons)
+            return
         elif isinstance(intent, Done):
             snap, zeroed = self._sessions.close(None)
             if snap is None:
@@ -149,3 +162,71 @@ class Bot:
             if entry.key == item.key and entry.count > 0:
                 return texts.has_item(item.name_he, entry.count, entry.location)
         return texts.no_item(item.name_he)
+
+    # Corrections
+
+    def _correct(self, update: Update, catalog: ItemCatalog, intent: SetCount | Remove | Add):
+        item = catalog.resolve(intent.name)
+        snap = self._corrections.target(update.reply_to_message_id)
+        text = update.text or ""
+        if item is None:
+            if isinstance(intent, Remove):
+                return texts.no_item(intent.name), None
+            question = PendingQuestion(
+                update.chat_id,
+                "new_item",
+                intent.name,
+                snap.id if snap else None,
+                intent.count,
+                self._clock.now(),
+            )
+            self._store.set_pending(question)
+            return texts.unknown_item(intent.name), [[(texts.YES, "newitem:yes"), (texts.NO, "newitem:no")]]
+        if isinstance(intent, Add):
+            _, entry = self._corrections.add(snap, item.key, intent.count, text)
+        else:
+            count = 0 if isinstance(intent, Remove) else intent.count
+            _, entry = self._corrections.set_count(snap, item.key, count, text)
+        return texts.updated(item.name_he, entry.count), None
+
+    # Buttons
+
+    def _callback(self, update: Update) -> None:
+        cb = update.callback
+        action, _, rest = cb.data.partition(":")
+        if action == "newitem":
+            self._telegram.answer_callback(cb.id)
+            if cb.message_id:
+                self._telegram.set_buttons(update.chat_id, cb.message_id, None)
+            self._new_item(update.chat_id, rest == "yes")
+            return
+        snapshot_id, _, key = rest.partition(":")
+        snap = self._store.get_snapshot(snapshot_id) if action in ("confirm", "remove") else None
+        catalog = self._catalog()
+        if snap is None or not key:
+            self._telegram.answer_callback(cb.id, texts.stale_button())
+            return
+        if action == "confirm":
+            _, entry = self._corrections.confirm(snap, key)
+        else:
+            _, entry = self._corrections.set_count(snap, key, 0, "✗")
+        self._telegram.answer_callback(cb.id, texts.updated(self._name(catalog, key), entry.count))
+        if cb.message_id:
+            rows = self._uncertain_buttons(snap, catalog)
+            self._telegram.set_buttons(update.chat_id, cb.message_id, rows or None)
+
+    def _new_item(self, chat_id: int, accepted: bool) -> None:
+        pending = self._store.get_pending(chat_id)
+        self._store.clear_pending(chat_id)
+        now = self._clock.now()
+        if pending is None or (now - pending.created_at).total_seconds() > self._pending_ttl_s:
+            self._telegram.send_message(chat_id, texts.question_expired())
+            return
+        if not accepted:
+            self._telegram.send_message(chat_id, texts.not_added())
+            return
+        item = ItemType(key=f"owner_{uuid4().hex[:8]}", name_he=pending.name.strip(), added_by="owner")
+        self._store.upsert_item_type(item)
+        snap = self._store.get_snapshot(pending.snapshot_id) if pending.snapshot_id else None
+        _, entry = self._corrections.add(snap, item.key, pending.count, f"+ {pending.name}")
+        self._telegram.send_message(chat_id, texts.updated(item.name_he, entry.count))

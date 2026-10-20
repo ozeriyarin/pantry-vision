@@ -97,15 +97,15 @@ Before every commit: `uv run pytest` and `uv run ruff check` pass, chained with 
 
 ### Tests for User Story 2 (write first, see them fail)
 
-- [ ] T031 [P] [US2] Integration tests in `tests/integration/test_us2_corrections.py`, scenarios quoted: "ביצים 4" sets 4 and confirms; "להוסיף חומוס" adds hummus ×1 recorded as `missed`; unknown item asks before adding, `כן` creates an `owner` item type and applies, `לא` changes nothing; "no milk" works like "אין חלב"; `✓` clears uncertain with kind `confirm`; `✗` sets 0 with kind `false`
-- [ ] T032 [P] [US2] Unit tests in `tests/unit/test_commands_corrections.py` for every row of the corrections table in `contracts/bot-commands.md`, both word orders for counts, and the fallback "לא הבנתי" reply
-- [ ] T033 [P] [US2] Unit tests in `tests/unit/test_corrections.py`: target snapshot from `reply_to_message` else the latest snapshot; `old_count`/`new_count` recorded; any correction clears `uncertain`; pending question expires after 10 minutes
+- [X] T031 [P] [US2] Integration tests in `tests/integration/test_us2_corrections.py`, scenarios quoted: "ביצים 4" sets 4 and confirms; "להוסיף חומוס" adds hummus ×1 recorded as `missed`; unknown item asks before adding, `כן` creates an `owner` item type and applies, `לא` changes nothing; "no milk" works like "אין חלב"; `✓` clears uncertain with kind `confirm`; `✗` sets 0 with kind `false`
+- [X] T032 [P] [US2] Unit tests in `tests/unit/test_commands_corrections.py` for every row of the corrections table in `contracts/bot-commands.md`, both word orders for counts, and the fallback "לא הבנתי" reply
+- [X] T033 [P] [US2] Unit tests in `tests/unit/test_corrections.py`: target snapshot from `reply_to_message` else the latest snapshot; `old_count`/`new_count` recorded; any correction clears `uncertain`; pending question expires after 10 minutes
 
 ### Implementation for User Story 2
 
-- [ ] T034 [US2] Add correction patterns to `src/pantry/bot/commands.py` (`<item> <n>`, `<n> <item>`, `אין <item>`, `no <item>`, `להוסיף <item> [<n>]`, `add <item> [<n>]`)
-- [ ] T035 [US2] Implement `src/pantry/domain/corrections.py`: resolve target snapshot, apply to the inventory entry, choose kind (`false` when the item was detected and set to 0, `missed` when it was not detected), write the `Correction`
-- [ ] T036 [US2] Implement text-correction, callback and new-item flows in `src/pantry/bot/handlers.py` using `PendingQuestion` in `pantry_pending/{chat_id}`; answer every callback query and remove the used buttons
+- [X] T034 [US2] Add correction patterns to `src/pantry/bot/commands.py` (`<item> <n>`, `<n> <item>`, `אין <item>`, `no <item>`, `להוסיף <item> [<n>]`, `add <item> [<n>]`)
+- [X] T035 [US2] Implement `src/pantry/domain/corrections.py`: resolve target snapshot, apply to the inventory entry, choose kind (`false` when the item was detected and set to 0, `missed` when it was not detected), write the `Correction`
+- [X] T036 [US2] Implement text-correction, callback and new-item flows in `src/pantry/bot/handlers.py` using `PendingQuestion` in `pantry_pending/{chat_id}`; answer every callback query and remove the used buttons
 
 **Checkpoint**: US1 and US2 tests green.
 

@@ -50,6 +50,18 @@ def no_open_session() -> str:
     return "אין צילום פתוח לסגור."
 
 
+def question_expired() -> str:
+    return "השאלה כבר לא בתוקף, אפשר לשלוח שוב."
+
+
+def not_added() -> str:
+    return "בסדר, לא הוספתי."
+
+
+def stale_button() -> str:
+    return "הכפתור כבר לא בתוקף."
+
+
 def not_understood() -> str:
     return 'לא הבנתי. אפשר לשלוח תמונה, לתקן ("ביצים 4", "אין חלב") או לשאול "מה יש לי?"'
 

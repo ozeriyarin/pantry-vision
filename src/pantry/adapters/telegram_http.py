@@ -44,8 +44,8 @@ class TelegramHttp:
             payload["text"] = text
         self._call("answerCallbackQuery", payload)
 
-    def clear_buttons(self, chat_id: int, message_id: int) -> None:
-        payload = {"chat_id": chat_id, "message_id": message_id, "reply_markup": keyboard(None)}
+    def set_buttons(self, chat_id: int, message_id: int, buttons: Buttons | None) -> None:
+        payload = {"chat_id": chat_id, "message_id": message_id, "reply_markup": keyboard(buttons)}
         self._call("editMessageReplyMarkup", payload)
 
     def download_file(self, file_id: str) -> bytes:

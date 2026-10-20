@@ -1,4 +1,4 @@
-"""Deterministic text grammar, no LLM (research R6). Queries, captions and "done" in this story."""
+"""Deterministic text grammar, no LLM (research R6): queries, corrections, captions and "done"."""
 
 import re
 from dataclasses import dataclass
@@ -17,6 +17,10 @@ _LOCATIONS = {
 _DONE = {"סיימתי", "סיימנו", "זהו", "done"}
 _QUERY = re.compile(r"^מה יש( לי)?( (\S+))?$")
 _HAS = re.compile(r"^\s*יש\s+(.+?)[\s?!.]*$")
+_ADD = re.compile(r"^(?:להוסיף|add)\s+(.+)$", re.IGNORECASE)
+_REMOVE = re.compile(r"^(?:אין|no)\s+(.+)$", re.IGNORECASE)
+_NAME_N = re.compile(r"^(\D.*?)\s+(\d+)$")
+_N_NAME = re.compile(r"^(\d+)\s+(\D.*)$")
 
 
 @dataclass(frozen=True)
@@ -27,6 +31,23 @@ class Query:
 @dataclass(frozen=True)
 class Has:
     name: str
+
+
+@dataclass(frozen=True)
+class SetCount:
+    name: str
+    count: int
+
+
+@dataclass(frozen=True)
+class Remove:
+    name: str
+
+
+@dataclass(frozen=True)
+class Add:
+    name: str
+    count: int
 
 
 @dataclass(frozen=True)
@@ -57,7 +78,18 @@ def parse_location(caption: str | None) -> Location | None:
     return None
 
 
-def parse_text(text: str) -> Query | Has | Done | Unknown:
+def _name_and_count(text: str) -> tuple[str, int | None]:
+    if m := _NAME_N.match(text):
+        return m.group(1), int(m.group(2))
+    if m := _N_NAME.match(text):
+        return m.group(2), int(m.group(1))
+    return text, None
+
+
+Intent = Query | Has | SetCount | Remove | Add | Done | Unknown
+
+
+def parse_text(text: str) -> Intent:
     norm = normalise(text or "")
     if not norm:
         return Unknown()
@@ -70,4 +102,13 @@ def parse_text(text: str) -> Query | Has | Done | Unknown:
         return Query(loc) if loc else Unknown()
     if norm.startswith("יש ") and (m := _HAS.match(text)):
         return Has(m.group(1))
+    raw = (text or "").strip().rstrip("?!. ")
+    if m := _ADD.match(raw):
+        name, count = _name_and_count(m.group(1))
+        return Add(name, 1 if count is None else count)
+    if m := _REMOVE.match(raw):
+        return Remove(m.group(1))
+    name, count = _name_and_count(raw)
+    if count is not None:
+        return SetCount(name, count)
     return Unknown()
