@@ -53,7 +53,10 @@ shipped commit sha.
   (P1 photo to inventory, P2 corrections, P3 morning heads-up) with its quality checklist. Commit e5a894c.
 - No GitHub remote yet: the owner is choosing public or private (the other two projects are public under
   `ozeriyarin`). Use `gh` at `C:\Program Files\GitHub CLI\gh.exe` once chosen.
-- Next: owner reviews spec 001, then `/speckit-plan`.
+- 2026-10-20: spec 001 clarified (no expiry in v1, caption location, uncertain items kept, 80% is the
+  fine-tuned target, cold starts exempt). Plan done: YOLO-World ONNX on CPU, Haiku 5.5 crop fallback,
+  about 0.40 USD a month. Open: research R10 (training photos past the 30-day delete).
+- Next: `/speckit-tasks`, then `/speckit-analyze`.
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 

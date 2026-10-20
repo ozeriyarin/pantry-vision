@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "A Telegram bot in Hebrew for one owner: send a photo of the fridge, freezer or pantry, get back the items it recognised with counts, correct mistakes, keep a running inventory per location, and receive a daily morning message about items expiring soon or running low. Recipes and barcode scanning are out of scope. Runs in the cloud, not on the owner's machine, under 10 USD a month."
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: Is expiry tracking in v1? → A: No. The morning message lists run-out items only; expiry is a later spec.
+- Q: How does the owner name the location of a photo? → A: A caption word (מקרר, מקפיא, מזווה); no caption means fridge.
+- Q: Does an uncertain item enter the inventory? → A: Yes, marked uncertain; a correction clears the mark.
+- Q: Is the 80% count accuracy a launch gate for the zero-shot detector? → A: No. It is the fine-tuned target; zero-shot is a reported baseline.
+- Q: Does the 15-second reply limit include cold starts? → A: No. Cold starts are measured separately; no paid always-on instance.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Photo to inventory (Priority: P1)
@@ -66,9 +76,9 @@ Every morning at a fixed time the owner gets one short Hebrew message listing it
 
 ### Functional Requirements
 
-- **FR-001**: System MUST accept a photo from the owner's Telegram chat with an optional location (fridge, freezer, pantry; default fridge) and reply in Hebrew with recognised items and counts.
+- **FR-001**: System MUST accept a photo from the owner's Telegram chat with an optional location given as a caption word (מקרר, מקפיא, מזווה; no caption means fridge) and reply in Hebrew with recognised items and counts.
 - **FR-002**: System MUST serve only an allow-listed set of chat ids and ignore all others without revealing data.
-- **FR-003**: System MUST mark items recognised below a configurable certainty threshold as uncertain in the reply.
+- **FR-003**: System MUST mark items recognised below a configurable certainty threshold as uncertain in the reply; uncertain items enter the inventory with an uncertain mark that a correction clears.
 - **FR-004**: System MUST re-check uncertain items with a second, more capable recognition step, limited by a monthly spending cap, and record the cost of every such check.
 - **FR-005**: System MUST keep a current inventory per location, replaced by each new snapshot, with photos sent within one minute for the same location merged into one snapshot.
 - **FR-006**: Users MUST be able to query the inventory in Hebrew ("מה יש לי", "יש <item>?", per location).
@@ -93,8 +103,8 @@ Every morning at a fixed time the owner gets one short Hebrew message listing it
 
 ### Measurable Outcomes
 
-- **SC-001**: The owner gets a reply to a photo within 15 seconds in at least 95% of cases, including a cold start.
-- **SC-002**: On the owner's labelled evaluation photos, counted items match the true counts for at least 80% of item occurrences at launch, published with per-item precision and recall.
+- **SC-001**: The owner gets a reply to a photo within 15 seconds in at least 95% of cases while the service is warm; cold-start replies are measured and reported separately, with no paid always-on instance.
+- **SC-002**: On the owner's labelled evaluation photos, counted items match the true counts for at least 80% of item occurrences with the fine-tuned detector, published with per-item precision and recall; the zero-shot detector is reported as a baseline with no pass mark.
 - **SC-003**: After two weeks of use, the owner needs on average no more than two corrections per photo.
 - **SC-004**: Total monthly running cost stays under 10 USD, and each month's cost is visible from the run records.
 - **SC-005**: The morning message arrives every day of a two-week trial without the owner's computer being on.
