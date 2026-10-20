@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+.venv
+.claude
+.specify
+specs
+tests
+training
+eval
+scripts
+data
+*.jpg
+*.jpeg
+*.png

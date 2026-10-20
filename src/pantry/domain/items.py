@@ -35,6 +35,17 @@ def load_item_types(path: Path) -> list[ItemType]:
     ]
 
 
+def seed_item_types(store, seed: list[ItemType]) -> int:
+    """Upsert seed types that are new or changed; owner-added types are never touched (FR-009)."""
+    current = {i.key: i for i in store.list_item_types()}
+    written = 0
+    for item in seed:
+        if current.get(item.key) != item:
+            store.upsert_item_type(item)
+            written += 1
+    return written
+
+
 class ItemCatalog:
     def __init__(self, items: Iterable[ItemType], strict: bool = True):
         self._by_key: dict[str, ItemType] = {}

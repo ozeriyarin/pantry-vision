@@ -1,0 +1,14 @@
+# Upload only what the image needs. Secrets, photos, models and tests never leave the machine.
+#!include:.gitignore
+.git/
+.gitignore
+.gcloudignore
+.claude/
+.specify/
+specs/
+tests/
+training/
+eval/
+scripts/
+uv.lock
+CLAUDE.md

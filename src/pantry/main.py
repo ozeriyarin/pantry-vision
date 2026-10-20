@@ -14,7 +14,7 @@ from pantry.app import create_app
 from pantry.bot.handlers import Bot
 from pantry.config import ROOT, load_settings
 from pantry.detection.onnx_detector import OnnxDetector
-from pantry.domain.items import load_item_types
+from pantry.domain.items import load_item_types, seed_item_types
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
 
@@ -29,9 +29,8 @@ def build():
     if not (settings.telegram_token and settings.webhook_secret and settings.anthropic_key):
         raise RuntimeError("missing secrets: telegram token, webhook secret or anthropic key")
     store = FirestoreStore()
-    if not store.list_item_types():
-        for item in load_item_types(ROOT / "config/items.yaml"):
-            store.upsert_item_type(item)
+    seeded = seed_item_types(store, load_item_types(ROOT / "config/items.yaml"))
+    logging.getLogger("pantry").info("item types seeded or updated: %d", seeded)
     model = Path(os.environ.get("PANTRY_MODEL", ROOT / "models/yolo-world-s-pantry.onnx"))
     detector = OnnxDetector(model, settings.min_score)
     telegram = TelegramHttp(settings.telegram_token.get_secret_value())

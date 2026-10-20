@@ -1,0 +1,18 @@
+# Fetch the model, build and push the image. Cloud Logging only, so the dedicated build account
+# needs no write access to a logs bucket.
+steps:
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - mkdir -p models && gcloud storage cp gs://${_MODELS_BUCKET}/models/yolo-world-s-pantry.onnx gs://${_MODELS_BUCKET}/models/yolo-world-s-pantry.json models/
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_IMAGE}", "."]
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "${_IMAGE}"]
+images: ["${_IMAGE}"]
+options:
+  logging: CLOUD_LOGGING_ONLY
+substitutions:
+  _IMAGE: ""
+  _MODELS_BUCKET: ""

@@ -50,3 +50,27 @@ def test_non_strict_catalog_skips_clashing_items(catalog):
     items = [*map(catalog.get, catalog.keys()), ItemType(key="owner_dup", name_he="חלב")]
     tolerant = ItemCatalog(items, strict=False)
     assert tolerant.skipped == ["owner_dup"] and tolerant.resolve("חלב").key == "milk"
+
+
+def test_seed_writes_only_new_or_changed_and_keeps_owner_types():
+    from pantry.domain.items import seed_item_types
+    from tests.fakes import InMemoryStore
+
+    store = InMemoryStore()
+    owner = ItemType("owner_ab12", "קולרבי", added_by="owner")
+    store.upsert_item_type(owner)
+    seed = load_item_types(ROOT / "config/items.yaml")
+    assert seed_item_types(store, seed) == len(seed)
+    assert seed_item_types(store, seed) == 0
+    assert store.item_types["owner_ab12"] == owner
+
+
+def test_root_can_be_overridden_for_containers(monkeypatch, tmp_path):
+    import importlib
+
+    import pantry.config as config
+
+    monkeypatch.setenv("PANTRY_ROOT", str(tmp_path))
+    assert importlib.reload(config).ROOT == tmp_path
+    monkeypatch.delenv("PANTRY_ROOT")
+    importlib.reload(config)

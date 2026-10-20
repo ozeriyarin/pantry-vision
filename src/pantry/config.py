@@ -7,7 +7,8 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, SecretStr
 
-ROOT = Path(__file__).resolve().parents[2]
+# Installed in a container the package sits in site-packages, so the image sets PANTRY_ROOT.
+ROOT = Path(os.environ.get("PANTRY_ROOT") or Path(__file__).resolve().parents[2])
 
 
 class Fallback(BaseModel):
