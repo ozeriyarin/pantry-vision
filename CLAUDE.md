@@ -55,8 +55,9 @@ shipped commit sha.
   `ozeriyarin`). Use `gh` at `C:\Program Files\GitHub CLI\gh.exe` once chosen.
 - 2026-10-20: spec 001 clarified (no expiry in v1, caption location, uncertain items kept, 80% is the
   fine-tuned target, cold starts exempt). Plan done: YOLO-World ONNX on CPU, Haiku 5.5 crop fallback,
-  about 0.40 USD a month. Open: research R10 (training photos past the 30-day delete).
-- Next: `/speckit-tasks`, then `/speckit-analyze`.
+  about 0.40 USD a month. R10 confirmed: training photos exported by an owner-run script.
+- Tasks: 51 in `specs/001-pantry-photo-inventory/tasks.md` (MVP = setup, foundational, US1, deploy).
+- Next: `/speckit-analyze`, then `/speckit-implement` starting with the ONNX export spike (T006-T007).
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 

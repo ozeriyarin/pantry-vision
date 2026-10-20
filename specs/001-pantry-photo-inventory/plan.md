@@ -49,7 +49,7 @@ instance, concurrency 1; no image bytes in logs or run records; Hebrew owner-fac
 | I. Hard Budget Cap | Cost table in R12 (about 0.40 USD, worst case 1.30 USD). max-instances 1, scale to zero, Haiku app cap 1 USD plus the Anthropic console limit, GCP budget alert at 10 USD. Every fallback call writes `cost_usd`. | Pass |
 | II. Cheap Model First | ONNX detector handles every photo; only crops in the uncertain band go to Haiku; thresholds in `config/settings.yaml`; corrections parsed without an LLM; calls counted in run records. | Pass |
 | III. Measured, Not Claimed | `eval/run_eval.py` reports mAP@0.5, per-item precision and recall, count accuracy; zero-shot baseline row first, fine-tuned row later; training on Colab or Kaggle only. | Pass |
-| IV. Privacy by Default | Private bucket, public access prevention, 30-day lifecycle on `photos/`; only crops leave GCP; run records hold no images; logs carry ids and types, never captions or bytes; allow-listed chat ids. | Pass, with R10 open (training photos past 30 days) |
+| IV. Privacy by Default | Private bucket, public access prevention, 30-day lifecycle on `photos/`; only crops leave GCP; run records hold no images; logs carry ids and types, never captions or bytes; allow-listed chat ids. | Pass (R10 confirmed: training photos stay outside the service) |
 | V. Cloud-Native, Laptop-Free | Webhook, detector, storage and scheduler all in GCP; scripted `scripts/deploy.ps1`. Only training and eval touch the laptop, which the constitution places outside the service. | Pass |
 | VI. Small, Testable Increments | Stories map to P1, P2, P3 task phases; each acceptance scenario gets a test quoting it; every external service behind a port with a fake. | Pass |
 
@@ -140,7 +140,6 @@ build service account, `scripts/deploy.ps1` under pwsh 7). The model file is pul
 | Step 6 | Telegram bot from BotFather; Anthropic key with its own spending limit (suggest 2 USD a month) |
 | Step 6 | GitHub repository visibility (public fits the AGPL detector licence) |
 | Step 7 | about 150 labelled photos |
-| Before Step 4 | R10: keep training photos outside the service (recommended), or amend the constitution |
 
 ## Complexity Tracking
 

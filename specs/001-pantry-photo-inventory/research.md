@@ -110,8 +110,8 @@ Phase 0 output for [plan.md](plan.md). Each entry: decision, rationale, alternat
   not break Principle V.
 - **Alternatives**: a `dataset/` prefix without lifecycle (contradicts Principle IV as written, needs a
   constitution amendment); Roboflow free tier (projects are public, unacceptable for home photos).
-- **Owner decision needed**: confirm this, or amend the constitution to allow a no-expiry `dataset/` prefix
-  for photos the owner marks for training.
+- **Owner decision (2026-10-20)**: confirmed. Training photos stay outside the service, exported by the
+  owner-run script; no constitution change.
 
 ## R11. Eval
 
