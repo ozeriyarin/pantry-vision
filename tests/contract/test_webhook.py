@@ -51,7 +51,7 @@ def test_unparseable_update_is_ignored(make_client, handled):
     assert handled == []
 
 
-def test_healthz_has_no_data_access(make_client, store):
-    response = make_client().get("/healthz")
+def test_health_has_no_data_access(make_client, store):
+    response = make_client().get("/health")
     assert response.json() == {"ok": True, "model": "fake"}
     assert store.calls == []

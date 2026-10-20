@@ -76,7 +76,7 @@ specs/001-pantry-photo-inventory/
 
 ```text
 src/pantry/
-├── app.py                # FastAPI routes: /telegram/webhook, /tasks/morning, /healthz
+├── app.py                # FastAPI routes: /telegram/webhook, /tasks/morning, /health
 ├── config.py             # settings from env + config/settings.yaml
 ├── ports.py              # Protocols: TelegramClient, Store, BlobStore, Detector, Verifier, Clock
 ├── domain/

@@ -27,7 +27,7 @@ One Cloud Run service, `pantry-bot`, europe-west1. Ingress all; the app authenti
 - **Response**: `200 {"sent": n, "run_out": k}`. Idempotent per calendar day: a second call on the same
   Asia/Jerusalem date returns `200 {"sent": 0}`.
 
-## GET /healthz
+## GET /health
 
 - **Auth**: none. **Response**: `200 {"ok": true, "model": "<onnx file name>"}`. No data access.
 

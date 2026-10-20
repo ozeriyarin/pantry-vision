@@ -1,0 +1,5 @@
+# LF everywhere: the Dockerfile line continuations break with CRLF.
+* text=auto eol=lf
+*.onnx binary
+*.jpg binary
+*.png binary

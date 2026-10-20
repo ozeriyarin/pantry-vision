@@ -151,7 +151,7 @@ function Step-Setup {
     Invoke-Gcloud firestore fields ttls update received_at --collection-group pantry_updates --enable-ttl `
         --project $Project --quiet *> $null
     $have = & gcloud firestore indexes composite list --project $Project `
-        --filter "collectionGroup:pantry_snapshots" --format "value(name)"
+        --format "value(name)" | Where-Object { $_ -match "collectionGroups/pantry_snapshots/" }
     if (-not $have) {
         Invoke-Gcloud firestore indexes composite create --project $Project --collection-group pantry_snapshots `
             --field-config "field-path=location,order=ascending" `

@@ -51,8 +51,8 @@ def create_app(
             raise HTTPException(status_code=401)
         return morning()
 
-    @app.get("/healthz")
-    def healthz() -> dict:
+    @app.get("/health")
+    def health() -> dict:
         return {"ok": True, "model": model_name}
 
     @app.post("/telegram/webhook")
