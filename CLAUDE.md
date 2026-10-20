@@ -60,7 +60,9 @@ shipped commit sha.
 - Tasks: 51 in `specs/001-pantry-photo-inventory/tasks.md` (MVP = setup, foundational, US1, deploy).
 - 2026-10-20: setup and ONNX spike done (T001-T007): export is faithful, zero-shot quality looks weak.
   Ultralytics analytics turned off (`yolo settings sync=False`). Run tools with `python -m uv`.
-- Next: foundational tasks T008-T017.
+- 2026-10-20: foundational T008-T017 done (32 tests). httpx logger is silenced in app.py because Telegram
+  URLs carry the bot token.
+- Next: US1 photo to inventory, T018-T030 (tests first).
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 
