@@ -58,7 +58,9 @@ shipped commit sha.
   fine-tuned target, cold starts exempt). Plan done: YOLO-World ONNX on CPU, Haiku 5.5 crop fallback,
   about 0.40 USD a month. R10 confirmed: training photos exported by an owner-run script.
 - Tasks: 51 in `specs/001-pantry-photo-inventory/tasks.md` (MVP = setup, foundational, US1, deploy).
-- Next: `/speckit-analyze`, then `/speckit-implement` starting with the ONNX export spike (T006-T007).
+- 2026-10-20: setup and ONNX spike done (T001-T007): export is faithful, zero-shot quality looks weak.
+  Ultralytics analytics turned off (`yolo settings sync=False`). Run tools with `python -m uv`.
+- Next: foundational tasks T008-T017.
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 
