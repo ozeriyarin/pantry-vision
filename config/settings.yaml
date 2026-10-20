@@ -9,6 +9,8 @@ fallback:
   cap_usd: 1.00
   price_in_per_mtok: 0.10
   price_out_per_mtok: 0.50
+  max_calls_per_photo: 8
+  est_cost_per_call: 0.0002
 crop:
   pad: 0.10
   max_side: 384

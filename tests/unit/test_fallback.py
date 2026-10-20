@@ -78,3 +78,22 @@ def test_cost_formula_from_usage():
     from pantry.adapters.anthropic_verifier import cost_usd
 
     assert round(cost_usd(600, 30, 0.10, 0.50), 9) == 0.000075
+
+
+def test_calls_per_photo_are_capped_and_highest_scores_go_first():
+    """Security review: one photo with many uncertain boxes must not make unbounded paid calls."""
+    dets = [det("milk", 0.10 + i * 0.01, i % 5) for i in range(20)]
+    answers = [FallbackResult("milk", 1, 0.0001)] * 8
+    pipeline, image, verifier, _ = make(dets, answers=answers)
+    result = pipeline.run(image, KEYS)
+    assert verifier.calls == 8 and result.fallback_calls == 8 and result.skipped == 12
+    verified_scores = sorted(d.score for d in result.detections if d.fallback)
+    assert verified_scores[0] >= 0.21
+
+
+def test_calls_limited_by_remaining_budget():
+    dets = [det("milk", 0.2, i) for i in range(5)]
+    budget = Budget("x", 0.9996, 3, 1.0)  # room for 2 calls at 0.0002
+    pipeline, image, verifier, _ = make(dets, answers=[FallbackResult("milk", 1, 0.0001)] * 2, budget=budget)
+    result = pipeline.run(image, KEYS)
+    assert verifier.calls == 2 and result.skipped == 3

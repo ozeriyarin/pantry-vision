@@ -15,6 +15,8 @@ class Fallback(BaseModel):
     cap_usd: float
     price_in_per_mtok: float
     price_out_per_mtok: float
+    max_calls_per_photo: int
+    est_cost_per_call: float
 
 
 class Crop(BaseModel):

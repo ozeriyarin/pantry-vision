@@ -65,7 +65,13 @@ class Fallback:
         if budget.spent_usd >= cap:
             return FallbackOutcome(list(detections), 0, len(detections), 0.0)
 
-        crops = [crop(image, d.box, self._crop.pad, self._crop.max_side) for d in detections]
+        # Bound spend per photo: the highest-scoring crops, at most what the remaining budget covers.
+        allowed = int((cap - budget.spent_usd) / self._settings.est_cost_per_call + 1e-6)
+        limit = min(self._settings.max_calls_per_photo, max(allowed, 1))
+        order = sorted(range(len(detections)), key=lambda i: -detections[i].score)
+        chosen = set(order[:limit])
+        picked = [detections[i] for i in range(len(detections)) if i in chosen]
+        crops = [crop(image, d.box, self._crop.pad, self._crop.max_side) for d in picked]
         with ThreadPoolExecutor(max_workers=self._max_workers) as pool:
             futures = [pool.submit(self._verifier.verify, c, keys) for c in crops]
             answers = []
@@ -75,8 +81,14 @@ class Fallback:
                 except Exception as exc:  # noqa: BLE001  any failure leaves the item uncertain
                     answers.append(exc)
 
+        answer_for = dict(zip((i for i in range(len(detections)) if i in chosen), answers, strict=True))
         out, calls, skipped, cost = [], 0, 0, 0.0
-        for det, answer in zip(detections, answers, strict=True):
+        for i, det in enumerate(detections):
+            if i not in answer_for:
+                skipped += 1
+                out.append(det)
+                continue
+            answer = answer_for[i]
             calls += 1
             if isinstance(answer, Exception):
                 skipped += 1
