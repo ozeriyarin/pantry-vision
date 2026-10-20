@@ -44,7 +44,8 @@ $BuildBucket = "gs://$($Project)_cloudbuild"
 $SecretNames = @("PANTRY_TELEGRAM_BOT_TOKEN", "PANTRY_TELEGRAM_WEBHOOK_SECRET", "PANTRY_ANTHROPIC_API_KEY")
 $ModelFiles = @("models/yolo-world-s-pantry.onnx", "models/yolo-world-s-pantry.json")
 $BudgetName = "pantry-vision budget"
-$BudgetUsd = 10
+# The billing account is in ILS; 37 ILS is about 10 USD (constitution cap).
+$BudgetAmount = "37ILS"
 
 function Invoke-Gcloud {
     & gcloud @args
@@ -248,9 +249,9 @@ function Step-Budget {
     $existing = & gcloud billing budgets list --billing-account $account --filter "displayName=""$BudgetName""" --format "value(name)"
     if ($existing) { Write-Host "Budget exists."; return }
     Invoke-Gcloud billing budgets create --billing-account $account --display-name $BudgetName `
-        --budget-amount "$($BudgetUsd)USD" --filter-projects "projects/$Project" --filter-labels $Label `
+        --budget-amount $BudgetAmount --filter-projects "projects/$Project" --filter-labels $Label `
         --threshold-rule percent=0.5 --threshold-rule percent=0.9 --threshold-rule percent=1.0 *> $null
-    Write-Host "Budget created: $BudgetUsd USD on resources labelled $Label, alerts at 50/90/100%."
+    Write-Host "Budget created: $BudgetAmount on resources labelled $Label, alerts at 50/90/100%."
 }
 
 switch ($Step) {

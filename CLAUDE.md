@@ -67,7 +67,11 @@ shipped commit sha.
   before the baseline eval.
 - 2026-10-20: US2 T031-T036 done (124 tests).
 - 2026-10-20: US3 T037-T040 done (142 tests). All three stories pass offline.
-- Next: deploy (T041-T044), then eval and polish (T045-T051).
+- 2026-10-20: deployed with `pwsh -File scripts/deploy.ps1` (steps check, setup, secrets, model, build,
+  deploy, webhook, scheduler, budget). Service pantry-bot, revision 2, scale 0-1, concurrency 1. Webhook set,
+  scheduler 07:30 verified (OIDC 200). Budget 37 ILS (billing account is ILS, about 10 USD), label
+  app=pantry-vision. Cloud Run reserves /healthz, so health is /health. Cold start about 13 s.
+- Next: owner sends a real photo to close T044, then eval and polish (T045-T051).
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 
