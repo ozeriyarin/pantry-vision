@@ -46,6 +46,10 @@ def session_closed(location: Location, zeroed: Iterable[str]) -> str:
     return "\n".join([f"נגמרו {in_location(location)}:", *zeroed])
 
 
+def no_open_session() -> str:
+    return "אין צילום פתוח לסגור."
+
+
 def not_understood() -> str:
     return 'לא הבנתי. אפשר לשלוח תמונה, לתקן ("ביצים 4", "אין חלב") או לשאול "מה יש לי?"'
 

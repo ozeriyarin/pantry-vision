@@ -80,7 +80,14 @@ def test_parse_callback_and_reply():
     )
     assert u.chat_id == 111 and u.callback.data == "remove:s1:milk" and u.callback.message_id == 8
     r = parse_update(
-        {"update_id": 3, "message": {"message_id": 4, "chat": {"id": 111}, "text": "ביצים 4",
-                                     "reply_to_message": {"message_id": 8}}}
+        {
+            "update_id": 3,
+            "message": {
+                "message_id": 4,
+                "chat": {"id": 111},
+                "text": "ביצים 4",
+                "reply_to_message": {"message_id": 8},
+            },
+        }
     )
     assert r.reply_to_message_id == 8 and r.text == "ביצים 4"
