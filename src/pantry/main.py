@@ -8,6 +8,7 @@ from pathlib import Path
 from pantry.adapters.anthropic_verifier import AnthropicVerifier
 from pantry.adapters.firestore_store import FirestoreStore
 from pantry.adapters.gcs_blob import GcsBlob
+from pantry.adapters.oidc import google_token_verifier
 from pantry.adapters.telegram_http import TelegramHttp
 from pantry.app import create_app
 from pantry.bot.handlers import Bot
@@ -42,7 +43,16 @@ def build():
     )
     clock = SystemClock()
     bot = Bot(settings, store, telegram, GcsBlob(settings.bucket), detector, verifier, clock)
-    return create_app(settings, store, telegram, clock, bot.handle, detector.model_name)
+    return create_app(
+        settings,
+        store,
+        telegram,
+        clock,
+        bot.handle,
+        detector.model_name,
+        morning=bot.morning,
+        verify_token=google_token_verifier(settings.service_url),
+    )
 
 
 app = build()

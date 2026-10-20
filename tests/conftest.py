@@ -9,10 +9,26 @@ from tests.fakes import FakeClock, FakeTelegram, InMemoryStore
 OWNER = 111
 STRANGER = 999
 SECRET = "test-webhook-secret"
+SCHEDULER = "pantry-scheduler@example.iam.gserviceaccount.com"
+SERVICE_URL = "https://pantry-bot.example.run.app"
 ENV = {
     "TELEGRAM_ALLOWED_CHAT_IDS": str(OWNER),
     "PANTRY_TELEGRAM_WEBHOOK_SECRET": SECRET,
+    "PANTRY_SCHEDULER_EMAIL": SCHEDULER,
+    "PANTRY_SERVICE_URL": SERVICE_URL,
 }
+
+
+def fake_verify_token(token: str) -> dict:
+    """Stands in for Google's id-token check: signature and audience failures raise ValueError."""
+    claims = {
+        "good": {"email": SCHEDULER, "email_verified": True, "aud": SERVICE_URL},
+        "wrong-email": {"email": "someone@example.com", "email_verified": True, "aud": SERVICE_URL},
+        "unverified": {"email": SCHEDULER, "email_verified": False, "aud": SERVICE_URL},
+    }
+    if token not in claims:
+        raise ValueError("invalid token or audience")
+    return claims[token]
 
 
 @pytest.fixture

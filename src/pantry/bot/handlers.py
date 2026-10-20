@@ -13,6 +13,7 @@ from pantry.detection.pipeline import Pipeline
 from pantry.domain.corrections import CorrectionService
 from pantry.domain.items import ItemCatalog, normalise
 from pantry.domain.models import ItemType, Location, PendingQuestion, RunRecord, Snapshot, SnapshotPhoto
+from pantry.domain.morning import MorningService
 from pantry.domain.snapshot import SessionService
 from pantry.ports import BlobStore, Clock, Detector, Store, TelegramClient, Verifier
 
@@ -43,6 +44,8 @@ class Bot:
         self._sessions = SessionService(store, clock, settings.session_window_s)
         self._corrections = CorrectionService(store, clock)
         self._pending_ttl_s = settings.pending_ttl_min * 60
+        self._morning = MorningService(store, clock, settings.morning_tz)
+        self._owners = sorted(settings.allowed_chat_ids)
 
     def _catalog(self) -> ItemCatalog:
         catalog = ItemCatalog(self._store.list_item_types(), strict=False)
@@ -248,3 +251,16 @@ class Bot:
         snap = self._store.get_snapshot(pending.snapshot_id) if pending.snapshot_id else None
         _, entry = self._corrections.add(snap, item.key, pending.count, f"+ {pending.name}")
         self._telegram.send_message(chat_id, texts.updated(item.name_he, entry.count))
+
+    # Morning (Cloud Scheduler)
+
+    def morning(self) -> dict:
+        plan = self._morning.plan()
+        if plan is None:
+            return {"sent": 0, "run_out": 0}
+        catalog = self._catalog()
+        text = texts.morning([(self._name(catalog, key), loc) for key, loc in plan.run_out])
+        for chat_id in self._owners:
+            self._telegram.send_message(chat_id, text)
+        self._morning.commit(plan)
+        return {"sent": len(self._owners), "run_out": len(plan.run_out)}

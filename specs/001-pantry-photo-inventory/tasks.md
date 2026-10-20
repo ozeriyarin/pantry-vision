@@ -119,13 +119,13 @@ Before every commit: `uv run pytest` and `uv run ruff check` pass, chained with 
 
 ### Tests for User Story 3 (write first, see them fail)
 
-- [ ] T037 [P] [US3] Integration tests in `tests/integration/test_us3_morning.py`, scenarios quoted: milk in the baseline and absent now is listed as run out; nothing ran out sends the one-line "all good"; first run with no baseline sends "all good" and writes one; a second call on the same Asia/Jerusalem date sends nothing; a partial session that did not show milk does not list milk as run out (Story 3 scenario 3, quoted)
-- [ ] T038 [P] [US3] Contract tests in `tests/contract/test_morning_auth.py`: missing token, wrong audience and wrong service-account email each give 401 (token verifier injected as a fake)
+- [X] T037 [P] [US3] Integration tests in `tests/integration/test_us3_morning.py`, scenarios quoted: milk in the baseline and absent now is listed as run out; nothing ran out sends the one-line "all good"; first run with no baseline sends "all good" and writes one; a second call on the same Asia/Jerusalem date sends nothing; a partial session that did not show milk does not list milk as run out (Story 3 scenario 3, quoted)
+- [X] T038 [P] [US3] Contract tests in `tests/contract/test_morning_auth.py`: missing token, wrong audience and wrong service-account email each give 401 (token verifier injected as a fake)
 
 ### Implementation for User Story 3
 
-- [ ] T039 [US3] Implement `src/pantry/domain/morning.py`: run-out = "count > 0 in the stored baseline and count 0 or absent now", new baseline after sending, last-sent date for idempotency
-- [ ] T040 [US3] Add `POST /tasks/morning` to `src/pantry/app.py`: verify the OIDC token with `google.oauth2.id_token` against the service URL audience and the `pantry-scheduler` email, send to each allow-listed chat, return `{"sent": n, "run_out": k}`
+- [X] T039 [US3] Implement `src/pantry/domain/morning.py`: run-out = "count > 0 in the stored baseline and count 0 or absent now", new baseline after sending, last-sent date for idempotency
+- [X] T040 [US3] Add `POST /tasks/morning` to `src/pantry/app.py`: verify the OIDC token with `google.oauth2.id_token` against the service URL audience and the `pantry-scheduler` email, send to each allow-listed chat, return `{"sent": n, "run_out": k}`
 
 **Checkpoint**: all three stories green offline.
 

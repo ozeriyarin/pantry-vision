@@ -17,6 +17,7 @@ log = logging.getLogger("pantry")
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 Handler = Callable[[Update], None]
+TokenVerifier = Callable[[str], dict]  # raises ValueError on a bad signature or audience
 
 
 def create_app(
@@ -26,12 +27,29 @@ def create_app(
     clock: Clock,
     handle: Handler,
     model_name: str = "",
+    morning: Callable[[], dict] | None = None,
+    verify_token: TokenVerifier | None = None,
 ) -> FastAPI:
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
     def authentic(token: str) -> bool:
         expected = settings.webhook_secret
         return bool(expected) and hmac.compare_digest(token.encode(), expected.get_secret_value().encode())
+
+    def scheduler_authentic(authorization: str) -> bool:
+        if not (verify_token and settings.scheduler_email and authorization.startswith("Bearer ")):
+            return False
+        try:
+            claims = verify_token(authorization.removeprefix("Bearer ").strip())
+        except ValueError:
+            return False
+        return claims.get("email") == settings.scheduler_email and claims.get("email_verified") is True
+
+    @app.post("/tasks/morning")
+    def morning_task(authorization: Annotated[str, Header()] = "") -> dict:
+        if not scheduler_authentic(authorization) or morning is None:
+            raise HTTPException(status_code=401)
+        return morning()
 
     @app.get("/healthz")
     def healthz() -> dict:

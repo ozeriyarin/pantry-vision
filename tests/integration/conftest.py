@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from pantry.app import create_app
 from pantry.bot.handlers import Bot
 from pantry.domain.models import Detection
-from tests.conftest import OWNER, SECRET
+from tests.conftest import OWNER, SECRET, fake_verify_token
 from tests.fakes import FakeBlob, FakeDetector, FakeVerifier
 from tests.images import jpeg
 
@@ -19,7 +19,17 @@ class Harness:
         self.store, self.telegram, self.clock = store, telegram, clock
         self.detector, self.verifier, self.blob = FakeDetector(), FakeVerifier(), FakeBlob()
         self.bot = Bot(settings, store, telegram, self.blob, self.detector, self.verifier, clock)
-        self.client = TestClient(create_app(settings, store, telegram, clock, self.bot.handle, "fake"))
+        app = create_app(
+            settings,
+            store,
+            telegram,
+            clock,
+            self.bot.handle,
+            "fake",
+            morning=self.bot.morning,
+            verify_token=fake_verify_token,
+        )
+        self.client = TestClient(app)
         self._update = 0
 
     def _post(self, message: dict, callback: dict | None = None) -> None:
@@ -71,6 +81,10 @@ class Harness:
 
     def entry(self, key: str, location="fridge"):
         return next(e for e in self.store.get_inventory() if e.key == key and e.location.value == location)
+
+    def morning(self, token: str = "good"):
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        return self.client.post("/tasks/morning", headers=headers)
 
     def last_text(self) -> str:
         return self.telegram.sent[-1].text
