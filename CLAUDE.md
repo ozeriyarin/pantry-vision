@@ -71,7 +71,11 @@ shipped commit sha.
   deploy, webhook, scheduler, budget). Service pantry-bot, revision 2, scale 0-1, concurrency 1. Webhook set,
   scheduler 07:30 verified (OIDC 200). Budget 37 ILS (billing account is ILS, about 10 USD), label
   app=pantry-vision. Cloud Run reserves /healthz, so health is /health. Cold start about 13 s.
-- Next: owner sends a real photo to close T044, then eval and polish (T045-T051).
+- 2026-10-20: first real photo scored 4/10 by the owner; buttons failed on a Telegram refresh error.
+  Revision 3 fixes: button refresh is cosmetic and logs Telegram's reason, one label per object, min score
+  0.20, "soy sauce bottle" prompt, correction hint in replies, CPU boost. Right after a deploy, Cloud Run
+  may answer 429 for a minute while the single instance churns.
+- Next: owner retests a photo, then eval and polish (T045-T051).
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 
