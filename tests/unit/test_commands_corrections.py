@@ -27,3 +27,21 @@ from pantry.bot.commands import Add, Has, Remove, SetCount, Unknown, parse_text
 )
 def test_parse_corrections(text, intent):
     assert parse_text(text) == intent
+
+
+@pytest.mark.parametrize(
+    "text, location, rest",
+    [
+        ("מקפיא: גלידה 2", "freezer", "גלידה 2"),
+        ("במזווה: אורז 3", "pantry", "אורז 3"),
+        ("fridge: milk 1", "fridge", "milk 1"),
+        ("מקרר:", "fridge", ""),
+        ("גלידה 2", None, "גלידה 2"),
+        ("שעה: 5", None, "שעה: 5"),
+    ],
+)
+def test_split_location(text, location, rest):
+    from pantry.bot.commands import split_location
+
+    loc, remainder = split_location(text)
+    assert (loc.value if loc else None, remainder) == (location, rest)

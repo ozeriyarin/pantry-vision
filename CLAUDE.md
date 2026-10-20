@@ -75,7 +75,12 @@ shipped commit sha.
   Revision 3 fixes: button refresh is cosmetic and logs Telegram's reason, one label per object, min score
   0.20, "soy sauce bottle" prompt, correction hint in replies, CPU boost. Right after a deploy, Cloud Run
   may answer 429 for a minute while the single instance churns.
-- Next: owner retests a photo, then eval and polish (T045-T051).
+- 2026-10-20: multi-line corrections, plurals, "did you mean", location prefix ("מקפיא: גלידה 2") live.
+  T045-T049 done (metrics, eval runner, dataset export, Colab notebook, privacy tests); README written with
+  accuracy table pending. Bash heredocs on this machine turn "\n" into a real newline: edit such lines
+  with the Edit tool.
+- Open: T050 needs the zero-shot eval on about 150 labelled photos; T051 closes the spec. Possible next
+  feature: configurable locations (asked, about +100 / -40 lines plus tests).
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 

@@ -230,3 +230,27 @@ def test_mixed_list_with_suggestion_and_new_name(h):
     h.tap("newitem:yes")
     assert h.counts()["tomato"] == 2
     assert [i.name_he for i in h.store.list_item_types() if i.added_by == "owner"] == ["קולרבי"]
+
+
+def test_location_prefix_routes_one_correction(h):
+    """Owner request: name the location in the text, "מקפיא: גלידה 2"."""
+    h.photo([box("eggs")])
+    h.text("מקפיא: גלידה 2")
+    assert h.counts("freezer") == {"ice_cream": 2}
+    assert "ice_cream" not in h.counts("fridge")
+
+
+def test_location_header_applies_to_following_lines(h):
+    h.photo([box("eggs")])
+    reply = h.text("מקפיא:\nגלידה 2\nעוף 1\nבמזווה: אורז 3\nחלב 1")
+    assert h.counts("freezer") == {"ice_cream": 2, "chicken": 1}
+    assert h.counts("pantry") == {"rice": 3, "milk": 1}
+    assert "גלידה ×2" in reply
+
+
+def test_unknown_item_with_location_is_created_there(h):
+    h.photo([box("eggs")])
+    h.text("מזווה: אבקת מרק עוף 1")
+    h.tap("newitem:yes")
+    owner = next(i for i in h.store.list_item_types() if i.added_by == "owner")
+    assert h.counts("pantry") == {owner.key: 1}

@@ -89,6 +89,17 @@ def _name_and_count(text: str) -> tuple[str, int | None]:
 Intent = Query | Has | SetCount | Remove | Add | Done | Unknown
 
 
+_LOCATION_PREFIX = re.compile(r"^\s*([^:\s]+)\s*:\s*(.*)$")
+
+
+def split_location(segment: str) -> tuple[Location | None, str]:
+    """ "מקפיא: גלידה 2" -> (freezer, "גלידה 2"); a bare "מקפיא:" sets the location for following lines."""
+    m = _LOCATION_PREFIX.match(segment)
+    if m and (loc := _location_word(m.group(1))):
+        return loc, m.group(2).strip()
+    return None, segment
+
+
 def split_lines(text: str) -> list[str]:
     """A message can carry several corrections, one per line or separated by commas."""
     return [part.strip() for line in text.splitlines() for part in line.split(",") if part.strip()]

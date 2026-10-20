@@ -30,7 +30,9 @@ Uncertain line buttons: `✓` (callback `confirm:<snapshot>:<key>`) and `✗` (c
 | `סיימתי`, `done` | close | close the open session as full; unseen items of that location go to 0; reply lists them, or "שום דבר לא נגמר" |
 
 A message may hold several corrections, one per line or separated by commas; each is applied, unreadable
-lines are listed as `לא הבנתי: "<line>"`, and all unknown names share one yes/no question.
+lines are listed as `לא הבנתי: "<line>"`, and all unknown names share one yes/no question. A line may start with a location,
+`מקפיא: גלידה 2`; a bare `מקפיא:` line sets the location for the lines after it. Without one, the target is
+the replied-to photo, else the latest photo.
 
 Reply: `עודכן: ביצים ×4`. Unknown `<item>`: `לא מכיר "<item>". להוסיף כסוג מוצר חדש?` with buttons
 `כן` / `לא`; `כן` creates the item type and applies the correction.

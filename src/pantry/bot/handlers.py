@@ -15,6 +15,7 @@ from pantry.bot.commands import (
     parse_location,
     parse_text,
     split_lines,
+    split_location,
 )
 from pantry.bot.updates import Update
 from pantry.config import Settings
@@ -151,7 +152,7 @@ class Bot:
     def _text(self, update: Update) -> None:
         catalog = self._catalog()
         segments = split_lines(update.text or "")
-        if len(segments) > 1:
+        if len(segments) > 1 or any(split_location(s)[0] for s in segments):
             reply, buttons = self._correct_many(update, catalog, segments)
             self._telegram.send_message(update.chat_id, reply, buttons=buttons)
             return
@@ -209,17 +210,17 @@ class Bot:
         entry = self._apply(snap, item.key, intent, text)
         return texts.updated(item.name_he, entry.count), None
 
-    def _ask_unknown(self, chat_id: int, snap, catalog: ItemCatalog, unknown: list[tuple[str, int, str]]):
+    def _ask_unknown(self, chat_id: int, snap, catalog: ItemCatalog, unknown: list[tuple]):
         """One question for all unknown names; close names get a 'did you mean' instead of a new item."""
         entries = []
-        for name, count, mode in unknown:
+        for name, count, mode, *where in unknown:
             near = catalog.suggest(name)
-            entries.append((name, count, mode, near.key if near else ""))
+            entries.append((name, count, mode, near.key if near else "", where[0] if where else ""))
         question = PendingQuestion(
             chat_id, "new_item", snap.id if snap else None, self._clock.now(), tuple(entries)
         )
         self._store.set_pending(question)
-        suggestions = {name: catalog.get(key).name_he for name, _, _, key in entries if key}
+        suggestions = {e[0]: catalog.get(e[3]).name_he for e in entries if e[3]}
         text = texts.unknown_items([e[0] for e in entries], suggestions)
         if suggestions:
             buttons = [[(texts.YES, "newitem:yes"), (texts.NEW, "newitem:new"), (texts.CANCEL, "newitem:no")]]
@@ -227,17 +228,28 @@ class Bot:
             buttons = [[(texts.YES, "newitem:yes"), (texts.NO, "newitem:no")]]
         return text, buttons
 
-    def _apply(self, snap, key: str, intent: SetCount | Remove | Add, text: str):
+    def _apply(self, snap, key: str, intent: SetCount | Remove | Add, text: str, location=None):
         if isinstance(intent, Add):
-            return self._corrections.add(snap, key, intent.count, text)[1]
+            return self._corrections.add(snap, key, intent.count, text, location)[1]
         count = 0 if isinstance(intent, Remove) else intent.count
-        return self._corrections.set_count(snap, key, count, text)[1]
+        return self._corrections.set_count(snap, key, count, text, location)[1]
+
+    def _target(self, update: Update, location: Location | None):
+        """A named location wins over the reply or latest photo."""
+        if location:
+            return self._store.latest_snapshot(location)
+        return self._corrections.target(update.reply_to_message_id)
 
     def _correct_many(self, update: Update, catalog: ItemCatalog, segments: list[str]):
         """One correction per line or comma; unknown names get a single yes/no question."""
-        snap = self._corrections.target(update.reply_to_message_id)
+        location: Location | None = None
         done, unknown, bad = [], [], []
-        for seg in segments:
+        for raw in segments:
+            named, seg = split_location(raw)
+            location = named or location
+            if not seg:
+                continue
+            snap = self._target(update, location)
             intent = parse_text(seg)
             if not isinstance(intent, SetCount | Remove | Add) or not valid_new_name(intent.name):
                 bad.append(seg)
@@ -248,14 +260,18 @@ class Bot:
                     done.append(texts.no_item(intent.name))
                 elif intent.name.strip() not in [u[0] for u in unknown]:
                     mode = "add" if isinstance(intent, Add) else "set"
-                    unknown.append((intent.name.strip(), intent.count, mode))
+                    unknown.append(
+                        (intent.name.strip(), intent.count, mode, location.value if location else "")
+                    )
                 continue
-            entry = self._apply(snap, item.key, intent, seg)
+            entry = self._apply(snap, item.key, intent, raw, location)
             done.append(texts.item_line(item.name_he, entry.count))
         lines = texts.updated_many(done) + [texts.not_understood_line(b) for b in bad]
         buttons = None
         if unknown:
-            question, buttons = self._ask_unknown(update.chat_id, snap, catalog, unknown)
+            question, buttons = self._ask_unknown(
+                update.chat_id, self._corrections.target(update.reply_to_message_id), catalog, unknown
+            )
             lines.append(question)
         return "\n".join(lines) or texts.not_understood(), buttons
 
@@ -311,11 +327,13 @@ class Bot:
         snap = self._store.get_snapshot(pending.snapshot_id) if pending.snapshot_id else None
         catalog = self._catalog()
         added = []
-        for name, count, mode, suggested in pending.entries:
+        for name, count, mode, suggested, *where in pending.entries:
+            location = Location(where[0]) if where and where[0] else None
+            target = self._store.latest_snapshot(location) if location else snap
             existing = catalog.get(suggested) if suggested and choice == "yes" else None
             if existing:
                 intent = Add(name, count) if mode == "add" else SetCount(name, count)
-                entry = self._apply(snap, existing.key, intent, f"{name} -> {existing.key}")
+                entry = self._apply(target, existing.key, intent, f"{name} -> {existing.key}", location)
                 added.append((existing.name_he, entry.count))
                 continue
             item = ItemType(key=f"owner_{uuid4().hex[:8]}", name_he=name.strip(), added_by="owner")
@@ -324,7 +342,7 @@ class Bot:
             except ValueError:
                 continue
             self._store.upsert_item_type(item)
-            _, entry = self._corrections.add(snap, item.key, count, f"+ {name}")
+            _, entry = self._corrections.add(target, item.key, count, f"+ {name}", location)
             added.append((item.name_he, entry.count))
         if not added:
             self._telegram.send_message(chat_id, texts.not_added())

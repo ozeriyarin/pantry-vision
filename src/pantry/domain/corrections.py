@@ -21,8 +21,12 @@ class CorrectionService:
     def _current(self, location: Location, key: str) -> InventoryEntry | None:
         return next((e for e in self._store.get_inventory(location) if e.key == key), None)
 
-    def _apply(self, snap: Snapshot | None, key: str, new_count: int, kind: str, text: str):
-        location = snap.location if snap else Location.FRIDGE
+    @staticmethod
+    def _where(snap: Snapshot | None, location: Location | None) -> Location:
+        return location or (snap.location if snap else Location.FRIDGE)
+
+    def _apply(self, snap, key: str, new_count: int, kind: str, text: str, location: Location | None = None):
+        location = self._where(snap, location)
         snapshot_id = snap.id if snap else ""
         now = self._clock.now()
         current = self._current(location, key)
@@ -37,7 +41,9 @@ class CorrectionService:
     def _detected(snap: Snapshot | None, key: str) -> bool:
         return bool(snap) and key in snap.items
 
-    def set_count(self, snap: Snapshot | None, key: str, count: int, text: str):
+    def set_count(
+        self, snap: Snapshot | None, key: str, count: int, text: str, location: Location | None = None
+    ):
         detected = self._detected(snap, key)
         if detected and count == 0:
             kind = "false"
@@ -45,13 +51,13 @@ class CorrectionService:
             kind = "missed"
         else:
             kind = "count"
-        return self._apply(snap, key, count, kind, text)
+        return self._apply(snap, key, count, kind, text, location)
 
-    def add(self, snap: Snapshot | None, key: str, count: int, text: str):
-        location = snap.location if snap else Location.FRIDGE
+    def add(self, snap: Snapshot | None, key: str, count: int, text: str, location: Location | None = None):
+        location = self._where(snap, location)
         current = self._current(location, key)
         kind = "count" if self._detected(snap, key) else "missed"
-        return self._apply(snap, key, (current.count if current else 0) + count, kind, text)
+        return self._apply(snap, key, (current.count if current else 0) + count, kind, text, location)
 
     def confirm(self, snap: Snapshot, key: str):
         current = self._current(snap.location, key)
