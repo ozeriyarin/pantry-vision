@@ -33,6 +33,7 @@ class Quality(BaseModel):
 class Settings(BaseModel):
     # Tunables from settings.yaml
     imgsz: int
+    agnostic_iou: float
     min_score: float
     uncertain_score: float
     session_window_s: int
@@ -69,6 +70,7 @@ def load_settings(
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     return Settings(
         imgsz=raw["detector"]["imgsz"],
+        agnostic_iou=raw["detector"]["agnostic_iou"],
         min_score=raw["min_score"],
         uncertain_score=raw["uncertain_score"],
         session_window_s=raw["session_window_s"],

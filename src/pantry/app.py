@@ -7,6 +7,7 @@ from typing import Annotated
 
 from fastapi import Body, FastAPI, Header, HTTPException
 
+from pantry.adapters.telegram_http import TelegramError
 from pantry.bot import texts
 from pantry.bot.updates import Update, parse_update
 from pantry.config import Settings
@@ -75,7 +76,8 @@ def create_app(
         try:
             handle(update)
         except Exception as exc:
-            log.error("update %s failed: %s", update.update_id, type(exc).__name__)
+            detail = str(exc) if isinstance(exc, TelegramError) else type(exc).__name__
+            log.error("update %s failed: %s", update.update_id, detail)
             try:
                 telegram.send_message(update.chat_id, texts.error())
             except Exception as send_exc:

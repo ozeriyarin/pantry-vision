@@ -10,6 +10,13 @@ from pantry.ports import Buttons
 API = "https://api.telegram.org"
 
 
+class TelegramError(Exception):
+    """Carries Telegram's own error text, which never contains the token, so it is safe to log."""
+
+    def __init__(self, method: str, status: int, description: str):
+        super().__init__(f"telegram {method} {status}: {description}")
+
+
 def keyboard(buttons: Buttons | None) -> dict[str, Any]:
     rows: Sequence = buttons or []
     return {"inline_keyboard": [[{"text": t, "callback_data": d} for t, d in row] for row in rows]}
@@ -22,10 +29,12 @@ class TelegramHttp:
 
     def _call(self, method: str, payload: dict[str, Any]) -> Any:
         response = self._client.post(f"{API}/bot{self._token}/{method}", json=payload)
-        response.raise_for_status()
-        body = response.json()
-        if not body.get("ok"):
-            raise RuntimeError(f"telegram {method} failed")
+        try:
+            body = response.json()
+        except ValueError:
+            body = {}
+        if response.status_code >= 400 or not body.get("ok"):
+            raise TelegramError(method, response.status_code, str(body.get("description", ""))[:200])
         return body["result"]
 
     def send_message(

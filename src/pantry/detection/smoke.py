@@ -17,7 +17,7 @@ def main() -> None:
     args = parser.parse_args()
 
     settings = load_settings({})
-    detector = OnnxDetector(args.model, settings.min_score)
+    detector = OnnxDetector(args.model, settings.min_score, settings.agnostic_iou)
     for path in args.photos:
         data = path.read_bytes()
         q = check_quality(

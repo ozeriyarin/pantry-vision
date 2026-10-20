@@ -34,6 +34,7 @@ def decode(
     size: tuple[int, int],
     min_score: float,
     iou: float = 0.7,
+    agnostic_iou: float | None = None,
 ) -> list[Detection]:
     """output: (1, 4 + n_classes, anchors) with cx, cy, w, h in letterbox pixels and class scores."""
     preds = output[0].T
@@ -57,11 +58,16 @@ def decode(
         for k in nms(boxes[idx], score[idx], iou):
             j = idx[k]
             found.append(Detection(classes[int(c)], tuple(float(v) for v in boxes[j]), float(score[j])))
-    return sorted(found, key=lambda d: -d.score)
+    found.sort(key=lambda d: -d.score)
+    if agnostic_iou is not None and len(found) > 1:
+        # One object, one label: zero-shot often names the same jar as jam, mustard and spread.
+        keep = nms(np.array([d.box for d in found]), np.array([d.score for d in found]), agnostic_iou)
+        found = [found[i] for i in sorted(keep)]
+    return found
 
 
 class OnnxDetector:
-    def __init__(self, onnx_path: Path, min_score: float):
+    def __init__(self, onnx_path: Path, min_score: float, agnostic_iou: float | None = None):
         import onnxruntime as ort
 
         meta = json.loads(onnx_path.with_suffix(".json").read_text(encoding="utf-8"))
@@ -69,6 +75,7 @@ class OnnxDetector:
         self.imgsz: int = meta["imgsz"]
         self.model_name = f"{onnx_path.name}@{meta['sha256'][:12]}"
         self._min_score = min_score
+        self._agnostic_iou = agnostic_iou
         self._session = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
         self._input = self._session.get_inputs()[0].name
 
@@ -77,4 +84,6 @@ class OnnxDetector:
         pixels, scale, pad = letterbox(img, self.imgsz)
         tensor = (pixels.astype(np.float32) / 255.0).transpose(2, 0, 1)[None]
         output = self._session.run(None, {self._input: tensor})[0]
-        return decode(output, self.classes, scale, pad, img.size, self._min_score)
+        return decode(
+            output, self.classes, scale, pad, img.size, self._min_score, agnostic_iou=self._agnostic_iou
+        )

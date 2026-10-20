@@ -82,13 +82,13 @@ def test_cost_formula_from_usage():
 
 def test_calls_per_photo_are_capped_and_highest_scores_go_first():
     """Security review: one photo with many uncertain boxes must not make unbounded paid calls."""
-    dets = [det("milk", 0.10 + i * 0.01, i % 5) for i in range(20)]
+    dets = [det("milk", 0.20 + i * 0.007, i % 5) for i in range(20)]
     answers = [FallbackResult("milk", 1, 0.0001)] * 8
     pipeline, image, verifier, _ = make(dets, answers=answers)
     result = pipeline.run(image, KEYS)
     assert verifier.calls == 8 and result.fallback_calls == 8 and result.skipped == 12
     verified_scores = sorted(d.score for d in result.detections if d.fallback)
-    assert verified_scores[0] >= 0.21
+    assert verified_scores[0] >= 0.28
 
 
 def test_calls_limited_by_remaining_budget():

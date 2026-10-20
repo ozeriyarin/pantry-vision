@@ -32,7 +32,7 @@ def build():
     seeded = seed_item_types(store, load_item_types(ROOT / "config/items.yaml"))
     logging.getLogger("pantry").info("item types seeded or updated: %d", seeded)
     model = Path(os.environ.get("PANTRY_MODEL", ROOT / "models/yolo-world-s-pantry.onnx"))
-    detector = OnnxDetector(model, settings.min_score)
+    detector = OnnxDetector(model, settings.min_score, settings.agnostic_iou)
     telegram = TelegramHttp(settings.telegram_token.get_secret_value())
     verifier = AnthropicVerifier(
         settings.anthropic_key.get_secret_value(),

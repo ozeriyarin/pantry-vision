@@ -138,3 +138,19 @@ def test_bad_stored_item_is_skipped_not_fatal(h):
     h.store.upsert_item_type(ItemType("owner_bad", "חלב", added_by="owner"))
     h.photo([box("eggs")])
     assert "ביצים ×1" in h.text("מה יש לי")
+
+
+def test_button_tap_still_applies_when_telegram_refresh_fails(h):
+    h.verifier.answers = [RuntimeError("down")]
+    h.photo([box("hummus", score=0.2)])
+    snap_id = h.store.latest_snapshot().id
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("telegram editMessageReplyMarkup 400: Bad Request")
+
+    h.telegram.set_buttons = broken
+    h.telegram.answer_callback = broken
+    sent = len(h.telegram.sent)
+    h.tap(f"remove:{snap_id}:hummus")
+    assert h.entry("hummus").count == 0
+    assert len(h.telegram.sent) == sent  # no "משהו השתבש" error message

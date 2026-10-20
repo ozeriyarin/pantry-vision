@@ -91,3 +91,16 @@ def test_parse_callback_and_reply():
         }
     )
     assert r.reply_to_message_id == 8 and r.text == "ביצים 4"
+
+
+def test_error_carries_telegram_description_but_not_token():
+    import pytest
+
+    from pantry.adapters.telegram_http import TelegramError
+
+    def handler(request):
+        return httpx.Response(400, json={"ok": False, "description": "Bad Request: message is not modified"})
+
+    with pytest.raises(TelegramError) as err:
+        make(handler).set_buttons(1, 2, None)
+    assert "message is not modified" in str(err.value) and "fake-token" not in str(err.value)

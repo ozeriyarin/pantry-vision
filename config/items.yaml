@@ -17,7 +17,7 @@ items:
   - {key: mayonnaise, name_he: מיונז, aliases: [mayo, mayonnaise], prompt: mayonnaise jar, location_hint: fridge}
   - {key: ketchup, name_he: קטשופ, aliases: [ketchup], prompt: ketchup bottle, location_hint: fridge}
   - {key: mustard, name_he: חרדל, aliases: [mustard], prompt: mustard jar, location_hint: fridge}
-  - {key: sauce_bottle, name_he: רוטב, aliases: [רוטב סויה, סויה, soy sauce, sauce], prompt: sauce bottle, location_hint: fridge}
+  - {key: sauce_bottle, name_he: רוטב, aliases: [רוטב סויה, סויה, soy sauce, sauce], prompt: soy sauce bottle, location_hint: fridge}
   - {key: beer, name_he: בירה, aliases: [beer], prompt: beer bottle, location_hint: fridge}
   - {key: soda, name_he: משקה מוגז, aliases: [קולה, cola, soda, soft drink], prompt: soda bottle, location_hint: fridge}
   - {key: juice, name_he: מיץ, aliases: [juice], prompt: juice bottle, location_hint: fridge}

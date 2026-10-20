@@ -56,3 +56,8 @@ def test_has_item_query(h):
     h.photo([box("eggs", i=i) for i in range(4)])
     assert h.text("יש ביצים?") == "כן, ביצים ×4 במקרר"
     assert h.text("יש חלב?") == "אין חלב"
+
+
+def test_photo_reply_explains_how_to_correct(h):
+    reply = h.photo([box("eggs")])
+    assert 'לתיקון שלחו למשל "ביצים 4"' in reply

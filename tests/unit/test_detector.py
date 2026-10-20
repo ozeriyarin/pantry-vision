@@ -48,3 +48,15 @@ def test_quality_flags_dark_and_blurry_and_passes_noise():
     assert check_quality(open_image(jpeg(dark=True)), 40, 60).reason == "dark"
     assert check_quality(open_image(jpeg(flat=True)), 40, 60).reason == "blurry"
     assert check_quality(open_image(jpeg(3)), 40, 60).ok
+
+
+def test_agnostic_nms_keeps_one_label_per_object():
+    out = output_with(
+        [
+            (100, 100, 40, 40, 0, 0.9),
+            (102, 100, 40, 40, 1, 0.7),  # same object, other label: dropped
+            (300, 300, 40, 40, 1, 0.6),  # separate object: kept
+        ]
+    )
+    found = decode(out, CLASSES, 1.0, (0, 0), (640, 640), min_score=0.1, agnostic_iou=0.5)
+    assert [(d.key, round(d.score, 1)) for d in found] == [("eggs", 0.9), ("milk", 0.6)]

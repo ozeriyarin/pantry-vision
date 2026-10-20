@@ -4,6 +4,7 @@ from collections.abc import Iterable
 
 from pantry.domain.models import Location
 
+CORRECTION_HINT = 'לתיקון שלחו למשל "ביצים 4", "אין חלב" או "להוסיף חומוס", או לחצו ✓/✗.'
 LOCATION_HE = {Location.FRIDGE: "מקרר", Location.FREEZER: "מקפיא", Location.PANTRY: "מזווה"}
 
 
@@ -19,6 +20,7 @@ def photo_reply(location: Location, lines: Iterable[str], not_checked: int = 0) 
     parts = [f"{in_location(location)}:", *lines]
     if not_checked:
         parts.append(f"{not_checked} פריטים לא נבדקו שוב.")
+    parts.append(CORRECTION_HINT)
     parts.append(f'כשסיימתם לצלם את כל ה{LOCATION_HE[location]}, שלחו "סיימתי".')
     return "\n".join(parts)
 

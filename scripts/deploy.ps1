@@ -209,7 +209,7 @@ function Step-Deploy {
     $secrets = ($SecretNames | ForEach-Object { "$_=$($_):latest" }) -join ","
     Invoke-Gcloud run deploy $Service --project $Project --region $Region --image (Get-Image) `
         --service-account $RunAs --min-instances 0 --max-instances 1 --concurrency 1 `
-        --memory 2Gi --cpu 1 --timeout 60 --allow-unauthenticated --labels $Label `
+        --memory 2Gi --cpu 1 --cpu-boost --timeout 60 --allow-unauthenticated --labels $Label `
         --set-env-vars $envVars --set-secrets $secrets
 }
 

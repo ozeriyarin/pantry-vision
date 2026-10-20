@@ -13,7 +13,7 @@ folded, niqqud and punctuation removed, English lowercased). `<n>` is a non-nega
 | photo too dark or blurry (mean luminance or Laplacian variance below config) | nothing stored | `התמונה לא ברורה, אפשר לצלם שוב?` |
 | fallback skipped (budget or error) for k items | items kept uncertain | extra line `k פריטים לא נבדקו שוב.` |
 
-Every photo reply ends with `כשסיימתם לצלם את כל ה<loc>, שלחו "סיימתי".`
+Every photo reply ends with the correction hint `לתיקון שלחו למשל "ביצים 4", "אין חלב" או "להוסיף חומוס", או לחצו ✓/✗.` and `כשסיימתם לצלם את כל ה<loc>, שלחו "סיימתי".`
 
 Uncertain line buttons: `✓` (callback `confirm:<snapshot>:<key>`) and `✗` (callback
 `remove:<snapshot>:<key>`).

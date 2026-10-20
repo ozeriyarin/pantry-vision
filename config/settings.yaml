@@ -1,7 +1,8 @@
 # Non-secret settings. Scores are provisional until the zero-shot baseline eval.
 detector:
   imgsz: 640
-min_score: 0.10
+  agnostic_iou: 0.5
+min_score: 0.20
 uncertain_score: 0.35
 session_window_s: 300
 fallback:

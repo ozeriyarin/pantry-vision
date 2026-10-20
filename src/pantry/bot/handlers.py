@@ -210,9 +210,9 @@ class Bot:
         cb = update.callback
         action, _, rest = cb.data.partition(":")
         if action == "newitem":
-            self._telegram.answer_callback(cb.id)
+            self._cosmetic(self._telegram.answer_callback, cb.id)
             if cb.message_id:
-                self._telegram.set_buttons(update.chat_id, cb.message_id, None)
+                self._cosmetic(self._telegram.set_buttons, update.chat_id, cb.message_id, None)
             self._new_item(update.chat_id, rest == "yes")
             return
         snapshot_id, _, key = rest.partition(":")
@@ -225,10 +225,22 @@ class Bot:
             _, entry = self._corrections.confirm(snap, key)
         else:
             _, entry = self._corrections.set_count(snap, key, 0, "✗")
-        self._telegram.answer_callback(cb.id, texts.updated(self._name(catalog, key), entry.count))
+        # The correction is saved; the toast and button refresh are cosmetic and must not fail the tap.
+        self._cosmetic(
+            self._telegram.answer_callback, cb.id, texts.updated(self._name(catalog, key), entry.count)
+        )
         if cb.message_id:
             rows = self._uncertain_buttons(snap, catalog)
-            self._telegram.set_buttons(update.chat_id, cb.message_id, rows or None)
+            self._cosmetic(self._telegram.set_buttons, update.chat_id, cb.message_id, rows or None)
+
+    @staticmethod
+    def _cosmetic(call, *args) -> None:
+        try:
+            call(*args)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "cosmetic telegram call failed: %s", exc if "telegram" in str(exc) else type(exc).__name__
+            )
 
     def _new_item(self, chat_id: int, accepted: bool) -> None:
         pending = self._store.get_pending(chat_id)
