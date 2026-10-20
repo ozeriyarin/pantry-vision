@@ -65,7 +65,8 @@ shipped commit sha.
 - 2026-10-20: US1 T018-T030 done (90 tests). One real Haiku crop call verified the request shape
   (0.0001 USD). Labels are weak at both steps (labneh read as tahini, yogurt as ice cream): tune prompts
   before the baseline eval.
-- Next: deploy the MVP (T041-T044) or US2 corrections (T031-T036).
+- 2026-10-20: US2 T031-T036 done (124 tests).
+- Next: US3 morning message (T037-T040) or deploy (T041-T044).
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 
