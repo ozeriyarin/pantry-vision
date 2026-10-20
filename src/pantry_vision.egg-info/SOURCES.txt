@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/pantry/__init__.py
+src/pantry_vision.egg-info/PKG-INFO
+src/pantry_vision.egg-info/SOURCES.txt
+src/pantry_vision.egg-info/dependency_links.txt
+src/pantry_vision.egg-info/requires.txt
+src/pantry_vision.egg-info/top_level.txt

@@ -20,3 +20,6 @@ runs/
 *.webp
 models/
 eval/out/
+
+# Local data folders
+data/

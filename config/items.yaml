@@ -1,0 +1,42 @@
+# Known item types. key: unique lowercase slug. aliases: Hebrew and English, unique across all types.
+# prompt: English text the zero-shot detector searches for. location_hint: fridge, freezer, pantry or null.
+items:
+  - {key: eggs, name_he: ביצים, aliases: [ביצה, egg, eggs], prompt: egg, location_hint: fridge}
+  - {key: milk, name_he: חלב, aliases: [milk], prompt: milk bottle, location_hint: fridge}
+  - {key: plant_milk, name_he: חלב צמחי, aliases: [משקה סויה, משקה שקדים, oat milk, almond milk, plant milk], prompt: plant milk carton, location_hint: fridge}
+  - {key: cottage, name_he: קוטג', aliases: [קוטג, cottage, cottage cheese], prompt: cottage cheese container, location_hint: fridge}
+  - {key: yogurt, name_he: יוגורט, aliases: [יוגורטים, מעדן, yogurt, yoghurt], prompt: yogurt cup, location_hint: fridge}
+  - {key: labneh, name_he: לבנה, aliases: [labneh], prompt: labneh tub, location_hint: fridge}
+  - {key: white_cheese, name_he: גבינה לבנה, aliases: [שמנת, cream cheese, white cheese], prompt: cream cheese tub, location_hint: fridge}
+  - {key: yellow_cheese, name_he: גבינה צהובה, aliases: [צהובה, yellow cheese, cheese slices], prompt: sliced yellow cheese, location_hint: fridge}
+  - {key: butter, name_he: חמאה, aliases: [butter], prompt: butter package, location_hint: fridge}
+  - {key: hummus, name_he: חומוס, aliases: [hummus], prompt: hummus container, location_hint: fridge}
+  - {key: tahini, name_he: טחינה, aliases: [tahini], prompt: tahini container, location_hint: fridge}
+  - {key: jam, name_he: ריבה, aliases: [jam, jelly], prompt: jam jar, location_hint: fridge}
+  - {key: spread_jar, name_he: ממרח, aliases: [פסטו, ממרחים, pesto, spread], prompt: jar of spread, location_hint: fridge}
+  - {key: mayonnaise, name_he: מיונז, aliases: [mayo, mayonnaise], prompt: mayonnaise jar, location_hint: fridge}
+  - {key: ketchup, name_he: קטשופ, aliases: [ketchup], prompt: ketchup bottle, location_hint: fridge}
+  - {key: mustard, name_he: חרדל, aliases: [mustard], prompt: mustard jar, location_hint: fridge}
+  - {key: sauce_bottle, name_he: רוטב, aliases: [רוטב סויה, סויה, soy sauce, sauce], prompt: sauce bottle, location_hint: fridge}
+  - {key: beer, name_he: בירה, aliases: [beer], prompt: beer bottle, location_hint: fridge}
+  - {key: soda, name_he: משקה מוגז, aliases: [קולה, cola, soda, soft drink], prompt: soda bottle, location_hint: fridge}
+  - {key: juice, name_he: מיץ, aliases: [juice], prompt: juice bottle, location_hint: fridge}
+  - {key: chocolate, name_he: שוקולד, aliases: [chocolate], prompt: chocolate bar, location_hint: null}
+  - {key: lettuce, name_he: חסה, aliases: [lettuce, romaine], prompt: lettuce, location_hint: fridge}
+  - {key: leafy_greens, name_he: עלים ירוקים, aliases: [רוקט, ארוגולה, עלים, arugula, greens], prompt: bag of leafy greens, location_hint: fridge}
+  - {key: eggplant, name_he: חציל, aliases: [חצילים, eggplant, aubergine], prompt: eggplant, location_hint: fridge}
+  - {key: tomato, name_he: עגבנייה, aliases: [עגבניה, עגבניות, tomato, tomatoes], prompt: tomato, location_hint: fridge}
+  - {key: cucumber, name_he: מלפפון, aliases: [מלפפונים, cucumber], prompt: cucumber, location_hint: fridge}
+  - {key: bell_pepper, name_he: פלפל, aliases: [פלפלים, pepper, bell pepper], prompt: bell pepper, location_hint: fridge}
+  - {key: lemon, name_he: לימון, aliases: [לימונים, lemon], prompt: lemon, location_hint: fridge}
+  - {key: apple, name_he: תפוח, aliases: [תפוחים, apple], prompt: apple, location_hint: fridge}
+  - {key: carrot, name_he: גזר, aliases: [carrot, carrots], prompt: carrot, location_hint: fridge}
+  - {key: onion, name_he: בצל, aliases: [onion], prompt: onion, location_hint: pantry}
+  - {key: chicken, name_he: עוף, aliases: [חזה עוף, chicken], prompt: raw chicken package, location_hint: freezer}
+  - {key: frozen_vegetables, name_he: ירקות קפואים, aliases: [frozen vegetables], prompt: frozen vegetables bag, location_hint: freezer}
+  - {key: ice_cream, name_he: גלידה, aliases: [ice cream], prompt: ice cream tub, location_hint: freezer}
+  - {key: bread, name_he: לחם, aliases: [פיתות, bread, pita], prompt: bread loaf, location_hint: pantry}
+  - {key: pasta, name_he: פסטה, aliases: [pasta, spaghetti], prompt: pasta package, location_hint: pantry}
+  - {key: rice, name_he: אורז, aliases: [rice], prompt: rice bag, location_hint: pantry}
+  - {key: canned_food, name_he: שימורים, aliases: [קופסת שימורים, canned food, can], prompt: canned food, location_hint: pantry}
+  - {key: oil, name_he: שמן, aliases: [שמן זית, oil, olive oil], prompt: oil bottle, location_hint: pantry}

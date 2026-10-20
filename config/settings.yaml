@@ -1,0 +1,20 @@
+# Non-secret settings. Scores are provisional until the zero-shot baseline eval.
+detector:
+  imgsz: 640
+min_score: 0.10
+uncertain_score: 0.35
+session_window_s: 300
+fallback:
+  model: claude-haiku-5-5
+  cap_usd: 1.00
+  price_in_per_mtok: 0.10
+  price_out_per_mtok: 0.50
+crop:
+  pad: 0.10
+  max_side: 384
+quality:
+  min_luminance: 40
+  min_laplacian_var: 60
+morning:
+  tz: Asia/Jerusalem
+pending_ttl_min: 10
