@@ -62,7 +62,10 @@ shipped commit sha.
   Ultralytics analytics turned off (`yolo settings sync=False`). Run tools with `python -m uv`.
 - 2026-10-20: foundational T008-T017 done (32 tests). httpx logger is silenced in app.py because Telegram
   URLs carry the bot token.
-- Next: US1 photo to inventory, T018-T030 (tests first).
+- 2026-10-20: US1 T018-T030 done (90 tests). One real Haiku crop call verified the request shape
+  (0.0001 USD). Labels are weak at both steps (labneh read as tahini, yogurt as ice cream): tune prompts
+  before the baseline eval.
+- Next: deploy the MVP (T041-T044) or US2 corrections (T031-T036).
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 
