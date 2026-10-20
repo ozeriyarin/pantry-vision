@@ -42,18 +42,16 @@ The owner sees a wrong item or count and fixes it with a short Hebrew reply ("א
 
 ### User Story 3 - Morning heads-up (Priority: P3)
 
-Every morning at a fixed time the owner gets one short Hebrew message listing items that expire within two days and items that have run out since yesterday. Each item has a default shelf life counted from the day it first appeared, and the owner can override an expiry date with a reply.
+Every morning at a fixed time the owner gets one short Hebrew message listing items that have run out since the previous morning, so the shopping list is ready before leaving the house. Expiry dates are out of scope for this version.
 
-**Why this priority**: It turns the inventory into something that saves food and shopping trips, but it needs Stories 1 and 2 to have data.
+**Why this priority**: It turns the inventory into something that saves shopping trips, but it needs Stories 1 and 2 to have data.
 
-**Independent Test**: Seed an inventory with an item first seen five days ago whose default shelf life is six days; the next morning's message lists it as expiring tomorrow.
+**Independent Test**: Seed yesterday's inventory with milk and today's snapshot without it; the next morning's message lists milk as run out.
 
 **Acceptance Scenarios**:
 
-1. **Given** cottage cheese first seen 5 days ago with a 6-day default shelf life, **When** the morning message is sent, **Then** it lists cottage cheese as expiring tomorrow.
-2. **Given** milk was in yesterday's inventory and today's photo shows none, **When** the morning message is sent, **Then** it lists milk as run out.
-3. **Given** nothing expires soon and nothing ran out, **When** the morning time comes, **Then** the bot sends a one-line "all good" message rather than nothing, so the owner knows it ran.
-4. **Given** the owner replies "קוטג' עד 25.10", **When** the next morning message is computed, **Then** it uses the overridden date.
+1. **Given** milk was in the inventory at the previous morning message and the latest snapshot shows none, **When** the morning message is sent, **Then** it lists milk as run out.
+2. **Given** nothing ran out since the previous morning, **When** the morning time comes, **Then** the bot sends a one-line "all good" message rather than nothing, so the owner knows it ran.
 
 ### Edge Cases
 
@@ -76,18 +74,18 @@ Every morning at a fixed time the owner gets one short Hebrew message listing it
 - **FR-006**: Users MUST be able to query the inventory in Hebrew ("מה יש לי", "יש <item>?", per location).
 - **FR-007**: Users MUST be able to correct counts, remove items and add missed items with short Hebrew or English replies, and the inventory MUST update immediately.
 - **FR-008**: System MUST store each correction with a reference to its photo as a labelled example for later evaluation and training.
-- **FR-009**: System MUST maintain a known item list (about 30 Hebrew item types with English aliases and a default shelf life each), editable without a code change.
-- **FR-010**: System MUST send one morning message per day at a configured time listing items expiring within 2 days and items run out since the previous day, or a one-line all-good message.
-- **FR-011**: Users MUST be able to override an item's expiry date with a short reply.
+- **FR-009**: System MUST maintain a known item list (about 30 Hebrew item types with English aliases), editable without a code change.
+- **FR-010**: System MUST send one morning message per day at a configured time listing items run out since the previous morning message, or a one-line all-good message.
+- **FR-011**: *Removed: expiry tracking is deferred to a later spec.*
 - **FR-012**: System MUST delete stored photos 30 days after upload and MUST NOT log or commit photo contents.
 - **FR-013**: System MUST write a record per processed photo with item counts, certainty levels, second-step calls, cost and latency, and no image data.
 - **FR-014**: System MUST run entirely in the cloud and keep working when the owner's computer is off.
 
 ### Key Entities
 
-- **Item type**: a kind of food the owner keeps (Hebrew name, English aliases, default shelf life in days, location hint).
+- **Item type**: a kind of food the owner keeps (Hebrew name, English aliases, location hint).
 - **Snapshot**: one or more photos of one location taken within a minute; has a time, location and detected items with counts and certainty.
-- **Inventory entry**: the current count of an item type in a location, the date it was first seen and an optional expiry override.
+- **Inventory entry**: the current count of an item type in a location and the time it was last seen.
 - **Correction**: an owner fix tied to a snapshot (item type, old count, new count, kind: count, missed or false); the source of labelled examples.
 - **Run record**: per-photo counts, certainty, second-step calls, cost and latency; no images.
 
@@ -103,10 +101,9 @@ Every morning at a fixed time the owner gets one short Hebrew message listing it
 
 ## Assumptions
 
-- Single owner; family sharing, recipes and barcode scanning are later features.
+- Single owner; family sharing, recipes, barcode scanning and expiry tracking are later features.
 - Photos are taken with a phone in normal kitchen light; the owner retakes a photo when asked.
 - About 30 item types cover most of what the owner keeps; similar brands are grouped in v1.
-- Default shelf lives come from a fixed table the owner can edit; printed expiry dates are not read in v1.
 - The morning message time defaults to 07:30 Asia/Jerusalem.
 - The owner supplies about 200 photos over two weeks and labels about 150 of them for the evaluation set; photos are never committed to the repository.
 - The existing Google Cloud project with billing is reused; a new Telegram bot and a dedicated, capped Anthropic key are created for this project.

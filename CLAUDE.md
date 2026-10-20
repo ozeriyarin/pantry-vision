@@ -6,7 +6,7 @@ Guidance for Claude Code in this repo.
 
 Pantry Vision: a Hebrew Telegram bot for one owner (Yarin Ozeri). Send a photo of the fridge, freezer or
 pantry, get back recognised items with counts, correct mistakes with short replies, keep an inventory per
-location, and get a 07:30 morning message about items expiring soon or run out. Third portfolio project for
+location, and get a 07:30 morning message about items that ran out. Third portfolio project for
 an AI-engineering interview at M.ai by Moveo (conversational AI). The other two are `C:\morning-agent`
 (TypeScript, Agent OS) and `C:\zchut-agent` (Python RAG, Agent OS, Cloud Run).
 
@@ -20,6 +20,7 @@ with a real eval) and a second spec-driven framework (GitHub spec-kit) to compar
 - Hebrew user-facing text; code, docs and commits in English.
 - Single user (allow-listed Telegram chat id). Family sharing later.
 - No barcode scanning in v1. Recipes come after v1.
+- No expiry tracking in v1 (decided 2026-10-20); the morning message lists run-out items only.
 - Budget: under 10 USD per month, hard caps at every provider.
 
 ## Planned stack (to be confirmed in /speckit-plan)
