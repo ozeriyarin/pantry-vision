@@ -79,8 +79,9 @@ shipped commit sha.
   T045-T049 done (metrics, eval runner, dataset export, Colab notebook, privacy tests); README written with
   accuracy table pending. Bash heredocs on this machine turn "\n" into a real newline: edit such lines
   with the Edit tool.
-- Open: T050 needs the zero-shot eval on about 150 labelled photos; T051 closes the spec. Possible next
-  feature: configurable locations (asked, about +100 / -40 lines plus tests).
+- 2026-10-20: configurable locations live (revision 7): built-ins in config/locations.yaml, owner adds more
+  with "מיקום חדש: <name>", stored in pantry_locations. Took +231 / -81 against a +100 / -40 estimate.
+- Open: T050 needs the zero-shot eval on about 150 labelled photos; T051 closes the spec.
 - Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
   create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
 
