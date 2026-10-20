@@ -9,3 +9,14 @@ data/labels/
 *.onnx
 *.pt
 runs/
+
+# Private data: never commit photos, models or env variants
+.env.*
+!.env.example
+*.jpg
+*.jpeg
+*.png
+*.heic
+*.webp
+models/
+eval/out/

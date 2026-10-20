@@ -50,9 +50,10 @@ shipped commit sha.
 ## State
 
 - 2026-10-20: spec-kit init, constitution v1.0.0, spec `specs/001-pantry-photo-inventory/spec.md`
-  (P1 photo to inventory, P2 corrections, P3 morning heads-up) with its quality checklist. Commit e5a894c.
-- No GitHub remote yet: the owner is choosing public or private (the other two projects are public under
-  `ozeriyarin`). Use `gh` at `C:\Program Files\GitHub CLI\gh.exe` once chosen.
+  (P1 photo to inventory, P2 corrections, P3 morning heads-up) with its quality checklist. Commit 07d995e.
+- GitHub: public repo `ozeriyarin/pantry-vision` (owner decision 2026-10-20). Keep private data out: photos,
+  models, `.env`, the GCP project id and the chat id live only in the gitignored `.env`. `gh` is at
+  `C:\Program Files\GitHub CLI\gh.exe`.
 - 2026-10-20: spec 001 clarified (no expiry in v1, caption location, uncertain items kept, 80% is the
   fine-tuned target, cold starts exempt). Plan done: YOLO-World ONNX on CPU, Haiku 5.5 crop fallback,
   about 0.40 USD a month. R10 confirmed: training photos exported by an owner-run script.
