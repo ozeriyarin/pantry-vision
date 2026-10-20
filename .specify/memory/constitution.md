@@ -17,13 +17,16 @@ whole photo by default. The threshold lives in config, and every fallback call i
 ### III. Measured, Not Claimed
 
 A detection change ships only with an eval on the owner's labelled photo set: mAP@0.5, per-item precision and
-recall, and count accuracy, before and after. Numbers go in the README. Training happens on a free GPU
+recall, and count accuracy, before and after. The first deployed detector is the baseline: its eval runs as
+soon as the labelled set exists. Numbers go in the README. Training happens on a free GPU
 (Colab or Kaggle) outside the service; serving never trains.
 
 ### IV. Privacy by Default
 
 Photos of the owner's home are private data. Photos are stored only in a private bucket with a 30-day
-lifecycle delete, never logged, never committed, never sent to any provider except the fallback crop.
+lifecycle delete, never logged, never committed, and never sent to any provider except the fallback crop
+and the owner's private training workspace (a private Drive folder used from Colab, or a private Kaggle
+dataset) for photos the owner exports for labelling and training.
 Run records keep counts and labels, not images. Single user: only allow-listed Telegram chat ids are served.
 
 ### V. Cloud-Native, Laptop-Free
@@ -59,4 +62,4 @@ a version bump (MAJOR for removed or redefined principles, MINOR for new princip
 wording) and a one-line reason. Every plan includes a Constitution Check against Principles I–VI; a violation
 needs a written justification in the plan's Complexity Tracking table or the plan is rejected.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-20 | **Last Amended**: 2026-10-20
+**Version**: 1.1.0 | **Ratified**: 2026-10-20 | **Last Amended**: 2026-10-20
