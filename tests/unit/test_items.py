@@ -39,3 +39,14 @@ def test_seed_list_has_no_cross_type_name_collisions(catalog):
 def test_adding_owner_type_with_taken_name_is_rejected(catalog):
     with pytest.raises(ValueError):
         ItemCatalog([*map(catalog.get, catalog.keys()), ItemType(key="kohlrabi", name_he="חלב")])
+
+
+def test_empty_after_normalisation_is_rejected():
+    with pytest.raises(ValueError):
+        ItemCatalog([ItemType(key="x1", name_he="!!!")])
+
+
+def test_non_strict_catalog_skips_clashing_items(catalog):
+    items = [*map(catalog.get, catalog.keys()), ItemType(key="owner_dup", name_he="חלב")]
+    tolerant = ItemCatalog(items, strict=False)
+    assert tolerant.skipped == ["owner_dup"] and tolerant.resolve("חלב").key == "milk"

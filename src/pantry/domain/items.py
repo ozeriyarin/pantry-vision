@@ -36,19 +36,29 @@ def load_item_types(path: Path) -> list[ItemType]:
 
 
 class ItemCatalog:
-    def __init__(self, items: Iterable[ItemType]):
+    def __init__(self, items: Iterable[ItemType], strict: bool = True):
         self._by_key: dict[str, ItemType] = {}
         self._by_name: dict[str, ItemType] = {}
+        self.skipped: list[str] = []
         for item in items:
-            self.add(item)
+            try:
+                self.add(item)
+            except ValueError:
+                if strict:
+                    raise
+                # One bad stored item must not take the whole bot down.
+                self.skipped.append(item.key)
 
     def add(self, item: ItemType) -> None:
-        self._by_key[item.key] = item
-        for name in (item.key, item.name_he, *item.aliases):
-            norm = normalise(name.replace("_", " "))
+        names = [normalise(n.replace("_", " ")) for n in (item.key, item.name_he, *item.aliases)]
+        for name, norm in zip((item.key, item.name_he, *item.aliases), names, strict=True):
+            if not norm:
+                raise ValueError(f"name '{name}' of {item.key} is empty after normalisation")
             owner = self._by_name.get(norm)
             if owner and owner.key != item.key:
                 raise ValueError(f"name '{name}' used by {owner.key} and {item.key}")
+        self._by_key[item.key] = item
+        for norm in names:
             self._by_name[norm] = item
 
     def get(self, key: str) -> ItemType | None:

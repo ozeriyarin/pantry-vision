@@ -1,5 +1,6 @@
 """Photo, query, correction, button and done flows."""
 
+import logging
 import time
 from uuid import uuid4
 
@@ -10,12 +11,18 @@ from pantry.config import Settings
 from pantry.detection.fallback import Fallback
 from pantry.detection.pipeline import Pipeline
 from pantry.domain.corrections import CorrectionService
-from pantry.domain.items import ItemCatalog
+from pantry.domain.items import ItemCatalog, normalise
 from pantry.domain.models import ItemType, Location, PendingQuestion, RunRecord, Snapshot, SnapshotPhoto
 from pantry.domain.snapshot import SessionService
 from pantry.ports import BlobStore, Clock, Detector, Store, TelegramClient, Verifier
 
+log = logging.getLogger("pantry")
 _cold = {"first": True}
+MAX_NAME = 40
+
+
+def valid_new_name(name: str) -> bool:
+    return 0 < len(normalise(name)) <= MAX_NAME
 
 
 class Bot:
@@ -38,7 +45,10 @@ class Bot:
         self._pending_ttl_s = settings.pending_ttl_min * 60
 
     def _catalog(self) -> ItemCatalog:
-        return ItemCatalog(self._store.list_item_types())
+        catalog = ItemCatalog(self._store.list_item_types(), strict=False)
+        if catalog.skipped:
+            log.warning("item types skipped for name clashes: %s", ", ".join(catalog.skipped))
+        return catalog
 
     def handle(self, update: Update) -> None:
         if update.callback:
@@ -166,6 +176,8 @@ class Bot:
     # Corrections
 
     def _correct(self, update: Update, catalog: ItemCatalog, intent: SetCount | Remove | Add):
+        if not valid_new_name(intent.name):
+            return texts.not_understood(), None
         item = catalog.resolve(intent.name)
         snap = self._corrections.target(update.reply_to_message_id)
         text = update.text or ""
@@ -226,6 +238,12 @@ class Bot:
             self._telegram.send_message(chat_id, texts.not_added())
             return
         item = ItemType(key=f"owner_{uuid4().hex[:8]}", name_he=pending.name.strip(), added_by="owner")
+        try:
+            candidate = self._catalog()
+            candidate.add(item)
+        except ValueError:
+            self._telegram.send_message(chat_id, texts.not_added())
+            return
         self._store.upsert_item_type(item)
         snap = self._store.get_snapshot(pending.snapshot_id) if pending.snapshot_id else None
         _, entry = self._corrections.add(snap, item.key, pending.count, f"+ {pending.name}")

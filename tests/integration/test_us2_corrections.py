@@ -110,3 +110,31 @@ def test_without_reply_latest_snapshot_is_the_target(h):
 
 def test_unrecognised_text_gets_help(h):
     assert h.text("בלה בלה").startswith("לא הבנתי")
+
+
+def test_symbol_only_or_overlong_names_are_not_offered_as_new_items(h):
+    """Security review: a name that normalises to nothing must never become an item type."""
+    h.photo([box("eggs")])
+    assert h.text("להוסיף !!!").startswith("לא הבנתי")
+    assert h.text("להוסיף " + "א" * 41).startswith("לא הבנתי")
+    assert h.store.pending == {}
+
+
+def test_clashing_new_name_is_refused_and_bot_keeps_working(h):
+    from pantry.domain.models import PendingQuestion
+
+    h.photo([box("eggs")])
+    # A pending name that slipped past resolve but clashes after normalisation
+    h.store.set_pending(PendingQuestion(111, "new_item", "milk", None, 1, h.clock.now()))
+    h.tap("newitem:yes")
+    assert h.last_text() == "בסדר, לא הוספתי."
+    assert sum(1 for i in h.store.list_item_types() if i.added_by == "owner") == 0
+    assert "ביצים" in h.text("מה יש לי")
+
+
+def test_bad_stored_item_is_skipped_not_fatal(h):
+    from pantry.domain.models import ItemType
+
+    h.store.upsert_item_type(ItemType("owner_bad", "חלב", added_by="owner"))
+    h.photo([box("eggs")])
+    assert "ביצים ×1" in h.text("מה יש לי")
