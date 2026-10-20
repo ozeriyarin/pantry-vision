@@ -14,8 +14,13 @@ Phase 0 output for [plan.md](plan.md). Each entry: decision, rationale, alternat
 - **Alternatives**: Ultralytics with torch CPU in the image (simpler, but ~1.5 GB image and slower cold
   start; kept as the fallback if the ONNX export of the open-vocabulary head fails); OWLv2 or Grounding DINO
   (stronger zero-shot, too slow on CPU); a hosted vision API for every photo (violates Principle II).
-- **Risk to verify first**: ONNX export of YOLO-World with baked classes, and that its outputs match the
-  `.pt` model on 5 photos. This is the first implementation task.
+- **Spike result (2026-10-20, T006-T007)**: export works (ultralytics 8.4, 39 classes, 50 MB ONNX). On five
+  owner photos with the same 640x640 letterbox, the ONNX and `.pt` models return identical boxes and classes
+  (64 each, top-score delta 0.000); median CPU inference 0.5 s. A fixed square input finds fewer boxes than
+  the `.pt` default rectangular letterbox (64 vs 90), so T023 should test a `dynamic=True` export.
+- **Zero-shot quality signal**: at score 0.10 the detector missed visible eggs, beer and yogurt and labelled
+  39 of 64 boxes "sauce bottle". Expect a weak baseline, heavy fallback use until fine-tuning, and tune
+  prompts and thresholds before the baseline eval.
 
 ## R2. Fallback recognition step
 
