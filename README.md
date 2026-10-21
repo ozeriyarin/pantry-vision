@@ -95,7 +95,7 @@ pwsh -File scripts/deploy.ps1 -Step all
 
 ## Labelling and fine-tuning
 
-1. `python -m uv run python scripts/export_dataset.py --out C:/pantry-vision-data/export` downloads corrected
+1. `python -m uv run python scripts/export_dataset.py --out C:/ai-projects/pantry-vision-data/export` downloads corrected
    bot photos before the 30-day delete, with the detector's boxes as pre-labels.
 2. Label in [Label Studio](https://labelstud.io) running locally; `python scripts/label_config.py` prints the
    labelling config with every item key. Export in YOLO format.

@@ -2,7 +2,7 @@
 
 Writes, outside the repo: images/<name>.jpg, a Label Studio tasks.json with the detector's boxes as
 pre-annotations, and corrections.json. Needs `gcloud auth application-default login` once.
-Usage: python scripts/export_dataset.py --out C:/pantry-vision-data/export [--all]
+Usage: python scripts/export_dataset.py --out C:/ai-projects/pantry-vision-data/export [--all]
 """
 
 import argparse
