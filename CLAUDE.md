@@ -81,9 +81,11 @@ shipped commit sha.
   with the Edit tool.
 - 2026-10-20: configurable locations live (revision 7): built-ins in config/locations.yaml, owner adds more
   with "מיקום חדש: <name>", stored in pantry_locations. Took +231 / -81 against a +100 / -40 estimate.
-- Open: T050 needs the zero-shot eval on about 150 labelled photos; T051 closes the spec.
-- Owner tasks: collect about 200 photos over two weeks (fridge, freezer, pantry, varied fill and light);
-  create a new Telegram bot with BotFather; create a dedicated Anthropic key with its own spending cap.
+- 2026-10-25: project closed as shipped. The owner parked the labelled-photo collection, so T050 (zero-shot
+  eval + fine-tune) stays open by decision; the eval runner, dataset export and Colab notebook are ready
+  if photos arrive later. T051 done: spec status set, this section updated.
+- Owner tasks if the fine-tune is resumed: collect about 200 photos (fridge, freezer, pantry, varied fill
+  and light), run `eval/run_eval.py` for the zero-shot row, then the Colab notebook.
 
 ## Owner's working rules
 

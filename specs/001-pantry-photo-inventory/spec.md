@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-pantry-photo-inventory`
 **Created**: 2026-10-20
-**Status**: Draft
+**Status**: Shipped (bot and pipeline live since 2026-10-20; the labelled-photo eval and the fine-tune were parked by the owner on 2026-10-25, see tasks T050/T051)
 **Input**: User description: "A Telegram bot in Hebrew for one owner: send a photo of the fridge, freezer or pantry, get back the items it recognised with counts, correct mistakes, keep a running inventory per location, and receive a daily morning message about items expiring soon or running low. Recipes and barcode scanning are out of scope. Runs in the cloud, not on the owner's machine, under 10 USD a month."
 
 ## Clarifications

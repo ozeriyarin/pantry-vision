@@ -149,8 +149,8 @@ Before every commit: `uv run pytest` and `uv run ruff check` pass, chained with 
 - [X] T047 [P] Write `scripts/export_dataset.py` (owner-run, research R10): download photos that have corrections before the 30-day delete, plus detections and corrections as JSON for Label Studio pre-annotation, into a local folder outside the repo
 - [X] T048 [P] Write `training/finetune.ipynb` for Colab or Kaggle (private workspace per constitution v1.1.0, Principle IV): train from the labelled export, export ONNX via the T006 path
 - [X] T049 [P] Privacy tests in `tests/contract/test_privacy.py`: `RunRecord` has no image fields; captured logs during a photo flow hold no caption text, image bytes or secret values
-- [ ] T050 Run the zero-shot eval on the labelled set and write `README.md`: what it does, architecture, cost table from R12, eval table with the zero-shot baseline row, privacy notes, Ultralytics AGPL note
-- [ ] T051 Close the spec: set `**Status**` in `specs/001-pantry-photo-inventory/spec.md` to shipped with the deployed commit sha, and update the State section of `CLAUDE.md`
+- [ ] T050 (parked 2026-10-25: the owner decided not to collect the 150-200 labelled photos for now; the eval runner, export and Colab notebook stay ready) Run the zero-shot eval on the labelled set and write `README.md`: what it does, architecture, cost table from R12, eval table with the zero-shot baseline row, privacy notes, Ultralytics AGPL note
+- [x] T051 (closed 2026-10-25 with the fine-tune parked, not shipped) Close the spec: set `**Status**` in `specs/001-pantry-photo-inventory/spec.md` to shipped with the deployed commit sha, and update the State section of `CLAUDE.md`
 
 ---
 

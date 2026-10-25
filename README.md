@@ -49,7 +49,8 @@ precision and recall, and count accuracy (share of photo-item pairs whose predic
 | YOLO-World s, zero-shot (baseline) | pending | pending | pending |
 | YOLO11 s, fine-tuned on owner photos | pending | pending | target 80% |
 
-The labelled set is being collected. Early signal from the first real photo: the zero-shot detector over-detects
+The labelled set was not collected: on 2026-10-25 the owner parked the fine-tune and closed the project
+with the zero-shot detector in production. The eval runner and the Colab notebook stay ready for it. Early signal from the first real photo: the zero-shot detector over-detects
 generic bottles and jars, which is why one-label-per-object, a 0.20 score floor and narrower prompts were added.
 
 ## Cost
